@@ -1,0 +1,88 @@
+{
+  "all_known": {
+    "tags": []
+  }, 
+  "filters": {
+    "title": "Filter", 
+    "widget": {
+      "filters": [
+        {
+          "constraints": null, 
+          "key": "uuid", 
+          "operators": [
+            "startswith"
+          ], 
+          "title": "UUID", 
+          "value_type": "string"
+        }, 
+        {
+          "constraints": [], 
+          "key": "tags", 
+          "operators": [
+            "any", 
+            "all"
+          ], 
+          "title": "Tags", 
+          "value_type": "subset"
+        }, 
+        {
+          "constraints": null, 
+          "key": "files", 
+          "operators": [
+            "substring_any"
+          ], 
+          "title": "Files", 
+          "value_type": "string"
+        }
+      ], 
+      "type": "filter"
+    }
+  }, 
+  "listing": {
+    "title": "Data sets (0 found)", 
+    "widget": {
+      "columns": [
+        {
+          "align": "left", 
+          "formatter": "route", 
+          "list": false, 
+          "sort_key": "title", 
+          "title": "Name"
+        }, 
+        {
+          "align": "right", 
+          "formatter": "filesize", 
+          "list": false, 
+          "sort_key": null, 
+          "title": "Size"
+        }
+      ], 
+      "rows": [], 
+      "sort": null, 
+      "sort_descending": null, 
+      "type": "table"
+    }
+  }, 
+  "summary": {
+    "title": "Summary", 
+    "widget": {
+      "items": [
+        {
+          "align": "right", 
+          "formatter": "int", 
+          "list": false, 
+          "title": "filesets", 
+          "value": 0
+        }, 
+        {
+          "align": "right", 
+          "formatter": "filesize", 
+          "list": false, 
+          "title": "size", 
+          "value": 0
+        }
+      ], 
+      "type": "keyval"
+    }
+  }
+}

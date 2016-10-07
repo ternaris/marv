@@ -1,0 +1,6 @@
+[uwsgi]
+http = UWSGI_IP:UWSGI_PORT
+wsgi-file = WSGI_PY
+; Currently only one process supported
+processes = 1
+threads = 8

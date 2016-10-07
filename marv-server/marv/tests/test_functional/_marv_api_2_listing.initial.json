@@ -1,0 +1,16 @@
+{
+  "data": [], 
+  "jsonapi": {
+    "version": "1.0"
+  }, 
+  "links": {
+    "first": "http://localhost/marv/api/2/listing?page[number]=1&page[size]=10", 
+    "last": "http://localhost/marv/api/2/listing?page[number]=0&page[size]=10", 
+    "next": "http://localhost/marv/api/2/listing?page[number]=2&page[size]=10", 
+    "prev": "http://localhost/marv/api/2/listing?page[number]=0&page[size]=10", 
+    "self": "/marv/api/2/listing"
+  }, 
+  "meta": {
+    "total": 0
+  }
+}

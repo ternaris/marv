@@ -1,0 +1,13 @@
+import logging
+formatter = logging.Formatter('%(asctime)s %(levelname)s %(name)s %(message)s')
+handler = logging.StreamHandler()
+handler.setFormatter(formatter)
+logger = logging.getLogger()
+logger.addHandler(handler)
+logger.setLevel(logging.DEBUG)
+
+import os
+config = os.path.join(os.path.dirname(__file__), 'marv.conf')
+
+import marv.app
+application = marv.app.create_app(config, app_root=MARV_APP_ROOT)

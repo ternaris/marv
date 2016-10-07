@@ -1,0 +1,2 @@
+recursive-include marv/app/static *
+recursive-include marv/data *

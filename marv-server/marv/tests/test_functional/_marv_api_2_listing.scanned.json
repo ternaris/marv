@@ -1,0 +1,87 @@
+{
+  "data": [
+    {
+      "attributes": {
+        "json": "{\"values\": [{\"route\": \"detail\", \"id\": \"11111111-1111-1111-1111-111111111111\", \"title\": \"11111111-1111-1111-1111-111111111111\"}, 16], \"id\": \"11111111-1111-1111-1111-111111111111\", \"tags\": []}", 
+        "mtime": 0.0, 
+        "uuid": "11111111-1111-1111-1111-111111111111"
+      }, 
+      "id": "1", 
+      "links": {
+        "self": "http://localhost/marv/api/2/listing/1"
+      }, 
+      "relationships": {
+        "files": {
+          "data": [
+            {
+              "id": "1", 
+              "type": "files"
+            }, 
+            {
+              "id": "2", 
+              "type": "files"
+            }
+          ], 
+          "links": {
+            "related": "/marv/api/2/listing/1/files", 
+            "self": "/marv/api/2/listing/1/relationships/files"
+          }
+        }, 
+        "tags": {
+          "data": [], 
+          "links": {
+            "related": "/marv/api/2/listing/1/tags", 
+            "self": "/marv/api/2/listing/1/relationships/tags"
+          }
+        }
+      }, 
+      "type": "listing"
+    }, 
+    {
+      "attributes": {
+        "json": "{\"values\": [{\"route\": \"detail\", \"id\": \"00000000-0000-0000-0000-000000000000\", \"title\": \"00000000-0000-0000-0000-000000000000\"}, 5], \"id\": \"00000000-0000-0000-0000-000000000000\", \"tags\": []}", 
+        "mtime": 0.0, 
+        "uuid": "00000000-0000-0000-0000-000000000000"
+      }, 
+      "id": "2", 
+      "links": {
+        "self": "http://localhost/marv/api/2/listing/2"
+      }, 
+      "relationships": {
+        "files": {
+          "data": [
+            {
+              "id": "3", 
+              "type": "files"
+            }
+          ], 
+          "links": {
+            "related": "/marv/api/2/listing/2/files", 
+            "self": "/marv/api/2/listing/2/relationships/files"
+          }
+        }, 
+        "tags": {
+          "data": [], 
+          "links": {
+            "related": "/marv/api/2/listing/2/tags", 
+            "self": "/marv/api/2/listing/2/relationships/tags"
+          }
+        }
+      }, 
+      "type": "listing"
+    }
+  ], 
+  "jsonapi": {
+    "version": "1.0"
+  }, 
+  "links": {
+    "first": "http://localhost/marv/api/2/listing?page[number]=1&page[size]=10", 
+    "last": "http://localhost/marv/api/2/listing?page[number]=1&page[size]=10", 
+    "next": "http://localhost/marv/api/2/listing?page[number]=2&page[size]=10", 
+    "prev": "http://localhost/marv/api/2/listing?page[number]=0&page[size]=10", 
+    "self": "/marv/api/2/listing"
+  }, 
+  "meta": {
+    "total": 2
+  }
+}
