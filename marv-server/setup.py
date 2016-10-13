@@ -48,7 +48,7 @@ REQUIRES = [
 ]
 
 setup(name='marv-server',
-      version='2.0.0b1',
+      version='2.0.0b2.dev',
       description='MARV framework web server',
       # long_description=README + '\n\n' + CHANGES,
       classifiers=[
