@@ -47,9 +47,9 @@ REQUIRES = [
     'testfixtures',
 ]
 
-setup(name='marv-server',
+setup(name='marv',
       version='2.0.0b2.dev',
-      description='MARV framework web server',
+      description='MARV framework',
       # long_description=README + '\n\n' + CHANGES,
       classifiers=[
           'Development Status :: 4 - Beta',
