@@ -34,18 +34,18 @@ REQUIRES = [
     'Flask-Restless>=1.0.0b1',
     'Flask-SQLAlchemy',
     'bcrypt',
-    'click',
     'configparser',
-    'watchdog',
-
-    # Testing
-    'coverage',
-    'ipdb',
-    'ipdbplugin',
-    'mock',
-    'nose',
-    'testfixtures',
+    'marv-cli',
 ]
+EXTRAS_REQUIRE = {
+    'testing': ['coverage',
+                'ipdb',
+                'ipdbplugin',
+                'ipython',
+                'mock',
+                'nose',
+                'testfixtures'],
+}
 
 setup(name='marv',
       version='2.0.0b2.dev',
@@ -74,8 +74,5 @@ setup(name='marv',
       test_suite='nose.collector',
       tests_require=['nose'],
       install_requires=REQUIRES,
-      entry_points={
-          'console_scripts': [
-              'marv = marv.cli:cli',
-          ],
-      })
+      extras_require=EXTRAS_REQUIRE,
+      entry_points={'marv_cli': ['marv = marv.cli']})

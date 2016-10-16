@@ -1,16 +1,7 @@
+-r ../marv-cli/reqs.txt
 Flask-Cors
 Flask-Login
 Flask-Restless>=1.0.0b1
 Flask-SQLAlchemy
 bcrypt
-click
 configparser
-watchdog
-
-coverage
-ipdb
-ipdbplugin
-ipython
-mock
-nose
-testfixtures

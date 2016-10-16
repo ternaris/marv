@@ -1,0 +1,7 @@
+coverage
+ipdb
+ipdbplugin
+ipython
+mock
+nose
+testfixtures
