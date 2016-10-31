@@ -61,7 +61,7 @@ def object_pairs_hook(pairs):
         key = pairs[0][0]
         value = pairs[0][1]
         if key == '$datetime':
-            return datetime.strptime(value, '%Y-%m-%dT%H:%M:%S.%f')
+            return datetime.strptime(value, '%Y-%m-%dT%H:%M:%S.%f' if '.' in value else '%Y-%m-%dT%H:%M:%S')
         elif key == '$timedelta':
             return timedelta(0, value)
     return Mapping(pairs)
@@ -80,7 +80,7 @@ def object_pairs_hook2(pairs):
         key = pairs[0][0]
         value = pairs[0][1]
         if key == '$datetime':
-            return datetime.strptime(value, '%Y-%m-%dT%H:%M:%S.%f')
+            return datetime.strptime(value, '%Y-%m-%dT%H:%M:%S.%f' if '.' in value else '%Y-%m-%dT%H:%M:%S')
         elif key == '$timedelta':
             return timedelta(0, value)
     return dict(pairs)
