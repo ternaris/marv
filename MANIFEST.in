@@ -1,2 +1,4 @@
+include *.rst
+include *.txt
 recursive-include marv/app/static *
 recursive-include marv/data *

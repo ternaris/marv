@@ -26,14 +26,15 @@ from pkg_resources import iter_entry_points, resource_stream
 
 import click
 
+from marv_cli import marv
 
-CONFIG = None
-VERBOSE = None
+
 PROFILES = {ep.name: ep for ep in iter_entry_points(group='marv_profiles')}
 DEFAULT_PROFILE = sorted(PROFILES)[0] if PROFILES else None
 
 
 def create_app(loglevel=logging.INFO, web=False, **kw):
+    from marv_cli import CONFIG, VERBOSE
     formatter = logging.Formatter('%(asctime)s %(levelname)s %(name)s %(message)s')
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)
@@ -42,18 +43,6 @@ def create_app(loglevel=logging.INFO, web=False, **kw):
     logger.setLevel(max(10, loglevel - VERBOSE * 10))
     from marv import app
     return app.create_app(CONFIG, web=web, **kw)
-
-
-@click.group()
-@click.option('--config', default='marv.conf',
-              type=click.Path(dir_okay=False, resolve_path=True),
-              help='Path to config file')
-@click.option('-v', '--verbose', count=True, help='Increase verbosity')
-def marv(config, verbose):
-    """Manage a Marv site"""
-    global CONFIG, ECHO_SQL, VERBOSE
-    CONFIG = config
-    VERBOSE = verbose
 
 
 @marv.command('init')
@@ -336,12 +325,3 @@ def marv_devserver(ipdb, port, public):
                 port=port,
                 reloader_type='watchdog',
                 threaded=True)
-
-
-def cli():
-    """setuptools entry_point"""
-    marv(auto_envvar_prefix='MARV')
-
-
-if __name__ == '__main__':
-    cli()
