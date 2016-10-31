@@ -8,5 +8,10 @@
     </head>
 
     <body>
+      <script>
+        if (!window.marvLoaded) {
+          document.body.innerHTML = '<div class="alert alert-danger" role="alert">MARV requires JavaScript ES2015, which your current browser does not support.</div>'
+        }
+      </script>
     </body>
 </html>
