@@ -4,6 +4,8 @@ Changelog
 2.0.0b3 (unreleased)
 ^^^^^^^^^^^^^^^^^^^^
 
+- gracefully handle non-existent authfile
+
 
 2.0.0b2 (2016-10-31)
 ^^^^^^^^^^^^^^^^^^^^

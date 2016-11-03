@@ -270,8 +270,11 @@ class Site(object):
             conn.close()
 
     def authenticate(self, username, password):
-        with open(self.authfile) as f:
-            users = json.load(f)
+        try:
+            with open(self.authfile) as f:
+                users = json.load(f)
+        except IOError:
+            return False
         hashed = users[username].encode('utf-8')
         return bcrypt.hashpw(password, hashed) == hashed
 
