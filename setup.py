@@ -49,7 +49,7 @@ EXTRAS_REQUIRE = {
 }
 
 setup(name='marv',
-      version='2.0.0b2',
+      version='2.0.0b3.dev',
       description='MARV framework',
       long_description=README + '\n\n' + CHANGES,
       classifiers=[
