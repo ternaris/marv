@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # MARV
-# Copyright (C) 2016  Ternaris, Munich, Germany
+# Copyright (C) 2016-2017  Ternaris, Munich, Germany
 #
 # This file is part of MARV
 #
@@ -18,9 +18,4 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with MARV.  If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import absolute_import, division, print_function
-
-import os
-from importlib import import_module
-
-import marv.nodes
+import marv_cli  # creates loglevels

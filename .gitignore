@@ -1,5 +1,10 @@
 *.egg-info
 *.py[co]
-/*/.coverage
-/*/cover
+*~
+.*~
+/.coverage
+
+/cover
+/dist
+/docs/_build/
 /venv

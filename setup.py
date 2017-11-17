@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # MARV
-# Copyright (C) 2016  Ternaris, Munich, Germany
+# Copyright (C) 2016-2017  Ternaris, Munich, Germany
 #
 # This file is part of MARV
 #
@@ -26,35 +26,13 @@ from setuptools import setup
 HERE = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(HERE, 'README.rst')) as f:
     README = f.read()
-with open(os.path.join(HERE, 'CHANGES.rst')) as f:
-    CHANGES = f.read()
-
-REQUIRES = [
-    'Flask-Cors',
-    'Flask-Login',
-    'Flask-Restless>=1.0.0b1',
-    'Flask-SQLAlchemy',
-    'bcrypt',
-    'configparser',
-    'marv-cli',
-]
-EXTRAS_REQUIRE = {
-    'testing': ['coverage',
-                'ipdb',
-                'ipdbplugin',
-                'ipython',
-                'mock',
-                'nose',
-                'testfixtures'],
-}
 
 setup(name='marv',
-      version='2.0.0b3.dev',
+      version='3.0.0',
       description='MARV framework',
-      long_description=README + '\n\n' + CHANGES,
+      long_description=README,
       classifiers=[
-          'Development Status :: 4 - Beta',
-          #'Development Status :: 5 - Production/Stable',
+          'Development Status :: 5 - Production/Stable',
           "Framework :: Flask",
           'License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)',
           'Operating System :: POSIX :: Linux',  # for now
@@ -69,11 +47,37 @@ setup(name='marv',
       author_email='team@ternaris.com',
       url='https://github.com/ternaris/marv',
       license='AGPLv3+',
-      packages=['marv', 'marv.app', 'marv.tests'],
+      packages=[
+          'marv',
+          'marv.app',
+          'marv.tests',
+          'marv_detail',
+          'marv_node',
+          'marv_node.tests',
+          'marv_nodes',
+          'marv_pycapnp',
+          'marv_pycapnp.tests',
+          'marv_store',
+          'marv_webapi',
+      ],
       include_package_data=True,
       zip_safe=False,
       test_suite='nose.collector',
       tests_require=['nose'],
-      install_requires=REQUIRES,
-      extras_require=EXTRAS_REQUIRE,
+      install_requires=['Flask-Cors',
+                        'Flask-SQLAlchemy',
+                        'PyJWT',
+                        'bcrypt',
+                        'configparser',
+                        'pycapnp-for-marv',
+                        'marv-cli'],
+      extras_require={
+          'testing': ['coverage',
+                      'ipdb',
+                      'ipdbplugin',
+                      'ipython',
+                      'mock',
+                      'nose',
+                      'testfixtures'],
+      },
       entry_points={'marv_cli': ['marv = marv.cli']})

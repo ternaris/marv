@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # MARV
-# Copyright (C) 2016  Ternaris, Munich, Germany
+# Copyright (C) 2016-2017  Ternaris, Munich, Germany
 #
 # This file is part of MARV
 #
@@ -20,31 +20,49 @@
 
 from __future__ import absolute_import, division, print_function
 
-from pkg_resources import resource_stream
+import sys
+from pkg_resources import iter_entry_points
 
-from .app import create_app
-from ._decorators import *
-from ._globals import *
+from marv_node.io import create_group
+from marv_node.io import create_stream
+from marv_node.io import fork
+from marv_node.io import get_logger
+from marv_node.io import get_requested
+from marv_node.io import get_stream
+from marv_node.io import make_file
+from marv_node.io import pull
+from marv_node.io import pull_all
+from marv_node.io import pull_any
+from marv_node.io import push
+from marv_node.io import set_header
+from marv_node.io import Pull
+from marv_node.node import input, node
+from marv_node.node import Node
+from marv_node.tools import select
+from marv_webapi.tooling import api_endpoint
+from marv_webapi.tooling import api_group
 
-# XXX: only for bb testing, would be nice to get onto proper make_fileset
-from ._model import make_fileinfo, make_filesetinfo
 
-# XXX: used by bagset integration test
-from ._site import Site
+__all__ = [
+    'create_group',
+    'create_stream',
+    'get_logger',
+    'get_stream',
+    'input',
+    'make_file',
+    'node',
+    'pull',
+    'pull_all',
+    'push',
+    'select',
+    'set_header',
+]
 
 
-class Profile(object):
-    def __init__(self, package, base, code_link, issues_link, logo,
-                 scanroot_prompt, window_title):
-        self.package = package
-        self.base = base
-        self.code_link = code_link
-        self.issues_link = issues_link
-        self.logo = logo
-        self.scanroot_prompt = scanroot_prompt
-        self.window_title = window_title
+MODULE = sys.modules[__name__]
+for ep in iter_entry_points(group='marv_deco'):
+    assert not hasattr(MODULE, ep.name)
+    setattr(MODULE, ep.name, ep.load())
+del MODULE
 
-    @property
-    def marv_conf_in(self):
-        name = '/'.join([self.base, 'marv.conf.in'])
-        return resource_stream(self.package, name).read()
+from marv_node.io import Abort

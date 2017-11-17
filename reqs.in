@@ -1,7 +1,0 @@
--r ../marv-cli/reqs.txt
-Flask-Cors
-Flask-Login
-Flask-Restless>=1.0.0b1
-Flask-SQLAlchemy
-bcrypt
-configparser

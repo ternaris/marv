@@ -1,17 +1,28 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
     <head>
-        <title>MARV_WINDOW_TITLE</title>
+        <title>MARV</title>
+        <meta charset="utf-8" />
         <base href="MARV_APP_ROOT/" />
-        <link rel="stylesheet" href="main-built.css" />
-        <script src="main-built.js" data-marv-code-link="MARV_CODE_LINK" data-marv-issues-link="MARV_ISSUES_LINK" data-marv-logo="MARV_LOGO"></script>
+        <link rel="icon" href="app/styles/images/favicon-16x16.png" sizes="16x16" type="image/png" />
+        <link rel="icon" href="app/styles/images/favicon-32x32.png" sizes="32x32" type="image/png" />
+        <link rel="icon" href="app/styles/images/favicon-96x96.png" sizes="96x96" type="image/png" />
+        <link rel="manifest" href="manifest.json" />
+        <meta name="theme-color" content="#db5945" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
     </head>
 
     <body>
-      <script>
-        if (!window.marvLoaded) {
-          document.body.innerHTML = '<div class="alert alert-danger" role="alert">MARV requires JavaScript ES2015, which your current browser does not support.</div>'
-        }
-      </script>
+        <noscript>
+            MARV requires a browser with Javascript support.
+        </noscript>
+
+        <script>
+            if (typeof Proxy !== 'function') {
+                document.body.innerHTML = '<div class="alert alert-danger js-error" role="alert">Your current browser does not support ES6 Javascript.</div>';
+            }
+        </script>
+        <link async rel="stylesheet" href="main-built.css" />
+        <script async src="main-built.js"></script>
     </body>
 </html>

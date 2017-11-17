@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # MARV
-# Copyright (C) 2016  Ternaris, Munich, Germany
+# Copyright (C) 2016-2017  Ternaris, Munich, Germany
 #
 # This file is part of MARV
 #
@@ -21,17 +21,9 @@
 from __future__ import absolute_import, division, print_function
 
 
-def detail_route(fileset, bagset_name):
+def download_link(file, dataset):
     return {
-        'route': 'detail',
-        'id': fileset.uuid,
-        'title': fileset.uuid if bagset_name is None else bagset_name,
-    }
-
-
-def download_link(file, fileset):
-    return {
-        'href': 'download/{}'.format(fileset.files.index(file)),
+        'href': 'download/{}'.format(dataset.files.index(file)),
         'target': '_blank',
         'title': file.relpath,
     }
@@ -39,7 +31,7 @@ def download_link(file, fileset):
 
 def file_status(file):
     state = []
-    if file.missing:
+    if file and file.missing:
         state.append({'icon': 'hdd',
                       'title': 'This file is missing',
                       'classes': 'text-danger'})

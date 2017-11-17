@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # MARV
-# Copyright (C) 2016  Ternaris, Munich, Germany
+# Copyright (C) 2016-2017  Ternaris, Munich, Germany
 #
 # This file is part of MARV
 #
@@ -25,11 +25,6 @@ import shutil
 import tempfile
 import unittest
 from contextlib import contextmanager
-
-from configparser import ConfigParser
-
-from ._aggregate import Aggregate
-from ._node import DAG
 
 
 @contextmanager
@@ -84,32 +79,3 @@ class TestCase(unittest.TestCase):
         with temporary_directory(self.KEEP_TEST_DIR) as tmpdir:
             self.test_dir = tmpdir
             super(TestCase, self).run(result)
-
-
-class NodeTestCase(unittest.TestCase):
-    CONFIG = None
-    KEEP_TEST_DIR = os.environ.get('KEEP')
-    aggdir = None
-    aggregate = None
-
-    config = None
-    fileset = None
-    need_run = None
-    scanroot = None
-    testdir = None
-    nodedag = None
-
-    def run(self, result=None):
-        with temporary_directory(self.KEEP_TEST_DIR) as tmpdir:
-            self.testdir = tmpdir
-            self.scanroot = os.path.join(tmpdir, 'scanroot')
-            os.makedirs(os.path.join(self.scanroot))
-            self.config = ConfigParser()
-            self.config.read_string(self.CONFIG.decode('utf-8'))
-
-            self.aggdir = os.path.join(tmpdir, 'agg')
-            self.aggregate = Aggregate.create(self.aggdir)
-
-            self.nodedag = DAG.from_config(self.config)
-            self.need_run = self.nodedag.need_run(self.aggregate)
-            super(NodeTestCase, self).run(result)

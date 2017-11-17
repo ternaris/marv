@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # MARV
-# Copyright (C) 2016  Ternaris, Munich, Germany
+# Copyright (C) 2016-2017  Ternaris, Munich, Germany
 #
 # This file is part of MARV
 #
@@ -20,85 +20,83 @@
 
 from __future__ import absolute_import, division, print_function
 
-import fcntl
+import base64
 import os
-from datetime import datetime, timedelta
+from logging import getLogger
+from uuid import uuid4
 
 import flask
-from pkg_resources import resource_filename
 
-from .._aggregate import Mapping, Sequence
-from .._model import db
-from .._site import Site
+from ..model import db
 
 
-class CustomJSONEncoder(flask.json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, datetime):
-            return obj.isoformat()
-        elif isinstance(obj, timedelta):
-            return obj.total_seconds()
-        elif isinstance(obj, Mapping):
-            return obj._dct
-        elif isinstance(obj, Sequence):
-            return obj._list
-        else:
-            raise TypeError(type(obj))
-        return flask.json.JSONEncoder.default(self, obj)
+log = getLogger(__name__)
 
 
-def create_app(marv_config, config_obj=None, web=True, app_root=None, **kw):
+def create_app(site, config_obj=None, app_root=None, **kw):
     app = flask.Flask(__name__)
-    app.site = site = Site(marv_config)
+    app.site = site
+
+    try:
+        fd = os.open(site.config.marv.sessionkey_file,
+                     os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o666)
+    except OSError:
+        pass
+    else:
+        with os.fdopen(fd, 'w') as f:
+            f.write(str(uuid4()))
+        log.verbose('Generated %s', site.config.marv.sessionkey_file)
+
+    with open(site.config.marv.sessionkey_file) as f:
+        app.config['SECRET_KEY'] = f.read()
 
     # default config
+    app_root = app_root.rstrip('/') if app_root else None
     app.config['APPLICATION_ROOT'] = app_root or None
-    app.config['MARV_ENABLE_BG_THREADS'] = True
-    app.config['SQLALCHEMY_BINDS'] = {'listing': site.dburi_listing}
-    app.config['SQLALCHEMY_ECHO'] = False
-    app.config['SQLALCHEMY_DATABASE_URI'] = site.dburi_files
+    app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+    app.config['SQLALCHEMY_DATABASE_URI'] = site.config.marv.dburi
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['SECRET_KEY'] = site.sessionkey
-
-    if web:
-        app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
-        app.json_encoder = CustomJSONEncoder
 
     if config_obj is not None:
         app.config.from_object(config_obj)
     app.config.update(kw)
 
     db.init_app(app)
-    with app.app_context():
-        db.create_all()
 
-    if not web:
-        site.load_config()
-        return app
+    from marv_webapi import webapi
+    webapi.init_app(app, url_prefix='/marv/api')
 
-    # Only one webserver
-    #fd = os.open(site.sessionkey_file, os.O_RDONLY)
-    #fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    staticdir = site.config.marv.staticdir
+    with open(os.path.join(staticdir, 'index.html')) as f:
+        index_html = f.read().replace('MARV_APP_ROOT', app_root or "")
 
-    from . import webapi2
-    site.load_config(_skip_nodes=True)
-    webapi2.register(app, '/marv/api/2')
-
-    with open(resource_filename('marv.app', 'static/index.html')) as f:
-        index_html = f.read().replace('MARV_APP_ROOT', app_root or "")\
-                             .replace('MARV_CODE_LINK', site.profile.code_link)\
-                             .replace('MARV_ISSUES_LINK', site.profile.issues_link)\
-                             .replace('MARV_LOGO', site.profile.logo)\
-                             .replace('MARV_WINDOW_TITLE', site.profile.window_title)
+    customjs = os.path.join(site.config.marv.frontenddir, 'custom.js')
+    try:
+        with(open(customjs)) as f:
+            data = base64.b64encode(f.read())
+    except IOError:
+        pass
+    else:
+        assert '<script async src="main-built.js"></script>' in index_html
+        index_html = index_html.replace(
+            '<script async src="main-built.js"></script>',
+            '<script src="data:text/javascript;base64,{}"></script>'.format(data) +
+            '\n<script async src="main-built.js"></script>'
+        )
 
     @app.route('/', defaults={'path': ''})
     @app.route('/<path:path>')
     def assets(path):
         if not path:
             path = 'index.html'
+
         if path == 'index.html':
             return index_html
-        return flask.send_from_directory(
-            os.path.join(resource_filename('marv.app', 'static')), path)
+        elif path == 'docs':
+            return flask.redirect(flask.request.base_url + '/', 301)
+
+        if path == 'docs/':
+            path = 'docs/index.html'
+        return flask.send_from_directory(staticdir, path, conditional=True)
 
     return app

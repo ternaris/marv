@@ -1,0 +1,119 @@
+# -*- coding: utf-8 -*-
+#
+# MARV
+# Copyright (C) 2016-2017  Ternaris, Munich, Germany
+#
+# This file is part of MARV
+#
+# MARV is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# MARV is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with MARV.  If not, see <http://www.gnu.org/licenses/>.
+
+from __future__ import absolute_import, division, print_function
+
+import json
+import os
+import time
+from base64 import b32encode
+from collections import Mapping, defaultdict, namedtuple
+
+from marv_node.mixins import LoggerMixin
+from .streams import PersistentStream, ReadStream
+
+
+class DirectoryAlreadyExists(Exception):
+    """Temporary directory for next generation of stream already exists
+
+    This might mean another node run is in progress or aborted without
+    proper cleanup.
+    """
+
+
+class Store(Mapping, LoggerMixin):
+    def __init__(self, path, nodes):
+        self.path = path
+        self.pending = {}
+        self.name_by_node = {v: k for k, v in nodes.items()}
+
+    def has_setid(self, setid):
+        return os.path.isdir(os.path.join(self.path, str(setid)))
+
+    def __getitem__(self, handle):
+        setdir = os.path.join(self.path, str(handle.setid))
+        symlink = os.path.join(setdir, str(handle.node.name))
+        try:
+            gendir = os.readlink(symlink)
+        except OSError:
+            raise KeyError(handle)
+        streamdir = os.path.join(setdir, gendir)
+        if not os.path.exists(streamdir):
+            raise KeyError(handle)
+        with open(os.path.join(streamdir, 'streams.json')) as f:
+            streams = json.load(f)
+        if handle.name != 'default':
+            streams = streams['streams'][handle.name]
+        return ReadStream(handle, streamdir, setdir, info=streams)
+
+    def __iter__(self):
+        raise NotImplementedError()
+
+    def __len__(self):
+        raise NotImplementedError()
+
+    def add_dataset(self, dataset):
+        setdir = os.path.join(self.path, str(dataset.setid))
+        os.mkdir(setdir)
+
+    def create_stream(self, handle):
+        assert handle.name == 'default', handle
+        setdir = os.path.join(self.path, str(handle.setid))
+        assert os.path.exists(setdir), setdir
+        name = self.name_by_node.get(handle.node, handle.node.name)
+        symlink = os.path.join(setdir, name)
+        try:
+            curgen = int(os.readlink(symlink).rsplit('-')[-1])
+        except OSError:
+            curgen = 0
+        next_name = '{}-{}'.format(name, curgen + 1)
+        nextdir = os.path.join(setdir, next_name)
+        newlink = os.path.join(setdir, '.{}'.format(name))
+        tmpdir = os.path.join(setdir, '.' + next_name)
+        try:
+            os.mkdir(tmpdir)
+        except OSError:
+            self.logerror('directory exists %r', tmpdir)
+            raise DirectoryAlreadyExists(tmpdir)
+        self.logdebug('created directory %r', tmpdir)
+
+        def commit(stream):
+            assert not stream.group or stream.done == stream.streams.viewkeys()
+            self.lognoisy('committing %r', nextdir)
+            streams = self._streaminfo(stream)
+            path = os.path.join(tmpdir, 'streams.json')
+            fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o666)
+            f = os.fdopen(fd, 'w')
+            json.dump(streams, f, indent=2, sort_keys=True)
+            f.close()
+            os.rename(tmpdir, nextdir)
+            os.utime(nextdir, None)
+            os.symlink(next_name, newlink)
+            os.rename(newlink, symlink)
+            del self.pending[stream]
+
+        stream = PersistentStream(handle, tmpdir, setdir=setdir, commit=commit)
+        self.pending[stream] = tmpdir
+        return stream
+
+    def _streaminfo(self, stream):
+        return {'name': stream.name,
+                'header': stream.handle.header,
+                'streams': {x.name: self._streaminfo(x) for x in (stream.streams or {}).values()}}
