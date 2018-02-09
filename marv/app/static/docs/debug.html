@@ -1,0 +1,154 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Debugging &#8212; MARV 3.1.0 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/sphinx_paramlinks.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '3.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Views" href="views.html" />
+    <link rel="prev" title="Tutorial: Write your own nodes" href="tutorial/write-your-own.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="debugging">
+<span id="debug"></span><h1>Debugging<a class="headerlink" href="#debugging" title="Permalink to this headline">¶</a></h1>
+<p>Given an exception during a node run:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> marv run --node bagmeta b563ng6y6d3 --force
+<span class="go">2018-02-01 09:58:10,552 INFO rospy.topics topicmanager initialized</span>
+<span class="go">2018-02-01 09:58:10,984 INFO marv.run b563ng6y6d.bagmeta.dwz4xbykdt.default (bagmeta) started with force</span>
+<span class="go">2018-02-01 09:58:10,987 ERRO marv.cli Exception occured for dataset b563ng6y6d3pjf6ycx7t52pqae:</span>
+<span class="go">Traceback (most recent call last):</span>
+<span class="go">  File &quot;/webapp/marv/suite/marv/marv/cli.py&quot;, line 405, in marvcli_run</span>
+<span class="go">    excluded_nodes, cachesize=cachesize)</span>
+<span class="go">  File &quot;/webapp/marv/suite/marv/marv/site.py&quot;, line 351, in run</span>
+<span class="go">    deps=deps, cachesize=cachesize)</span>
+<span class="go">  File &quot;/webapp/marv/suite/marv/marv_node/run.py&quot;, line 63, in run_nodes</span>
+<span class="go">    done, send_queue_empty = process_task(current, task)</span>
+<span class="go">  File &quot;/webapp/marv/suite/marv/marv_node/run.py&quot;, line 352, in process_task</span>
+<span class="go">    return loop()</span>
+<span class="go">  File &quot;/webapp/marv/suite/marv/marv_node/run.py&quot;, line 242, in loop</span>
+<span class="go">    promise = current.send(send)</span>
+<span class="go">  File &quot;/webapp/marv/suite/marv/marv_node/driver.py&quot;, line 89, in _run</span>
+<span class="go">    request = gen.send(send)</span>
+<span class="go">  File &quot;/webapp/marv/suite/marv/marv_node/node.py&quot;, line 243, in invoke</span>
+<span class="go">    send = yield gen.send(send)</span>
+<span class="go">  File &quot;/webapp/marv/suite/robotics/marv_robotics/bag.py&quot;, line 171, in bagmeta</span>
+<span class="go">    xx</span>
+<span class="go">NameError: global name &#39;xx&#39; is not defined</span>
+<span class="go">2018-02-01 09:58:10,992 ERRO marv.cli Error occured for dataset b563ng6y6d3pjf6ycx7t52pqae: global name &#39;xx&#39; is not defined</span>
+</pre></div>
+</div>
+<p>one can enter ipdb by running <code class="docutils literal"><span class="pre">marv-ipdb</span></code> instead of <code class="docutils literal"><span class="pre">marv</span></code>:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> marv-ipdb run --node bagmeta b563ng6y6d3 --force
+<span class="go">2018-02-01 13:04:41,524 INFO rospy.topics topicmanager initialized</span>
+<span class="go">2018-02-01 13:04:41,979 INFO marv.run b563ng6y6d.bagmeta.dwz4xbykdt.default (bagmeta) started with force</span>
+<span class="go">NameError(&quot;global name &#39;xx&#39; is not defined&quot;,)</span>
+<span class="go">/webapp/venv/lib/python2.7/site-packages/IPython/core/debugger.py:243: DeprecationWarning: The `color_scheme` argument is deprecated since version 5.1</span>
+<span class="go">  DeprecationWarning)</span>
+<span class="gp">&gt;</span> /webapp/marv/suite/robotics/marv_robotics/bag.py<span class="o">(</span><span class="m">171</span><span class="o">)</span>bagmeta<span class="o">()</span>
+<span class="go">    170     end_time = 0</span>
+<span class="go">--&gt; 171     xx</span>
+<span class="go">    172     connections = {}</span>
+
+<span class="go">ipdb&gt;</span>
+</pre></div>
+</div>
+<p>Likewise ipdb can be used by placing <code class="docutils literal"><span class="pre">import</span> <span class="pre">ipdb;</span> <span class="pre">ipdb.set_trace()</span></code> anywhere in the code.</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> marv run --node bagmeta b563ng6y6d3 --force
+<span class="go">2018-02-01 13:08:14,235 INFO rospy.topics topicmanager initialized</span>
+<span class="go">2018-02-01 13:08:14,633 INFO marv.run b563ng6y6d.bagmeta.dwz4xbykdt.default (bagmeta) started with force</span>
+<span class="go">/webapp/venv/lib/python2.7/site-packages/IPython/core/debugger.py:243: DeprecationWarning: The `color_scheme` argument is deprecated since version 5.1</span>
+<span class="go">  DeprecationWarning)</span>
+<span class="gp">&gt;</span> /webapp/marv/suite/robotics/marv_robotics/bag.py<span class="o">(</span><span class="m">172</span><span class="o">)</span>bagmeta<span class="o">()</span>
+<span class="go">    171     import ipdb; ipdb.set_trace()</span>
+<span class="go">--&gt; 172     connections = {}</span>
+<span class="go">    173     for path in paths:</span>
+
+<span class="go">ipdb&gt;</span>
+</pre></div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="tutorial/write-your-own.html" title="previous chapter">Tutorial: Write your own nodes</a></li>
+      <li>Next: <a href="views.html" title="next chapter">Views</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/debug.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016-2018, Ternaris.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/debug.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

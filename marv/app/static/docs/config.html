@@ -1,0 +1,722 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Configuration &#8212; MARV 3.1.0 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/sphinx_paramlinks.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '3.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Scanner" href="scan.html" />
+    <link rel="prev" title="Views" href="views.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="configuration">
+<span id="config"></span><h1>Configuration<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h1>
+<p>The configuration file <code class="docutils literal"><span class="pre">marv.conf</span></code> is in Python config parser / ini-syntax and consists of at least one <a class="reference internal" href="#cfg-section-marv"><span class="std std-ref">marv section</span></a> and one or more <a class="reference internal" href="#cfg-section-collection"><span class="std std-ref">collection section</span></a>. See some <a class="reference internal" href="#cfg-examples"><span class="std std-ref">Examples</span></a> below.</p>
+<p>If you make changes to your configuration, keep in mind that you have to stop <code class="docutils literal"><span class="pre">uwsgi</span></code>, run <code class="docutils literal"><span class="pre">marv</span> <span class="pre">init</span></code>, and start <code class="docutils literal"><span class="pre">uwsgi</span></code> again.</p>
+<div class="section" id="relative-paths">
+<h2>Relative paths<a class="headerlink" href="#relative-paths" title="Permalink to this headline">¶</a></h2>
+<p>The location of <code class="docutils literal"><span class="pre">marv.conf</span></code> is the site directory and relative paths are relative to that directory.</p>
+</div>
+<div class="section" id="marv-section">
+<span id="cfg-section-marv"></span><h2>marv section<a class="headerlink" href="#marv-section" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-ini"><div class="highlight"><pre><span></span><span class="k">[marv]</span>
+</pre></div>
+</div>
+<div class="section" id="collections">
+<span id="cfg-marv-collections"></span><h3>collections<a class="headerlink" href="#collections" title="Permalink to this headline">¶</a></h3>
+<p>Name of one or more collections, corresponding to a <a class="reference internal" href="#cfg-section-collection"><span class="std std-ref">collection section</span></a>.</p>
+<p>Example:</p>
+<div class="highlight-ini"><div class="highlight"><pre><span></span><span class="na">collections</span> <span class="o">=</span> <span class="s">bags</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="dburi">
+<span id="cfg-marv-dburi"></span><h3>dburi<a class="headerlink" href="#dburi" title="Permalink to this headline">¶</a></h3>
+<p>Location of sqlite database. Despite the generic name, only sqlite is supported.</p>
+<p>Example:</p>
+<div class="highlight-ini"><div class="highlight"><pre><span></span><span class="na">dburi</span> <span class="o">=</span> <span class="s">sqlite:////var/local/lib/marv/db/db.sqlite</span>
+</pre></div>
+</div>
+<p>Default:</p>
+<div class="highlight-ini"><div class="highlight"><pre><span></span><span class="na">dburi</span> <span class="o">=</span> <span class="s">sqlite:///path/to/sitedir/db/db.sqlite</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Keep the <code class="docutils literal"><span class="pre">db/db.sqlite</span></code> suffix for ease of migrations.</p>
+</div>
+</div>
+<div class="section" id="store">
+<span id="cfg-marv-store"></span><h3>store<a class="headerlink" href="#store" title="Permalink to this headline">¶</a></h3>
+<p>Example:</p>
+<div class="highlight-ini"><div class="highlight"><pre><span></span><span class="na">store</span> <span class="o">=</span> <span class="s">/var/local/lib/marv/store</span>
+</pre></div>
+</div>
+<p>Default:</p>
+<div class="highlight-ini"><div class="highlight"><pre><span></span><span class="na">store</span> <span class="o">=</span> <span class="s">./store</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="collection-section">
+<span id="cfg-section-collection"></span><h2>collection section<a class="headerlink" href="#collection-section" title="Permalink to this headline">¶</a></h2>
+<p>Configuration for a collection of datasets.</p>
+<div class="section" id="scanner">
+<span id="cfg-c-scanner"></span><h3>scanner<a class="headerlink" href="#scanner" title="Permalink to this headline">¶</a></h3>
+<p>A <a class="reference internal" href="api/marv.html#module-marv.scanner" title="marv.scanner"><code class="xref py py-mod docutils literal"><span class="pre">marv.scanner</span></code></a> is responsible to group files into named datasets.</p>
+<p>Example:</p>
+<div class="highlight-ini"><div class="highlight"><pre><span></span><span class="na">scanner</span> <span class="o">=</span> <span class="s">marv_robotics.bag:scan</span>
+</pre></div>
+</div>
+<p>See <a class="reference internal" href="scan.html#marv_robotics.bag.scan" title="marv_robotics.bag.scan"><code class="xref py py-func docutils literal"><span class="pre">marv_robotics.bag.scan()</span></code></a></p>
+</div>
+<div class="section" id="scanroots">
+<span id="cfg-c-scanroots"></span><h3>scanroots<a class="headerlink" href="#scanroots" title="Permalink to this headline">¶</a></h3>
+<p>One or more directories to scan for datasets.</p>
+<p>Example:</p>
+<div class="highlight-ini"><div class="highlight"><pre><span></span><span class="na">scanroos</span> <span class="o">=</span><span class="s"></span>
+<span class="s">    ./foo</span>
+<span class="s">    ./bar</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="nodes">
+<span id="cfg-c-nodes"></span><h3>nodes<a class="headerlink" href="#nodes" title="Permalink to this headline">¶</a></h3>
+<p>List of nodes made available within this collection under the name following the column, which is also the name of the function the node is created from.</p>
+<p>Example:</p>
+<div class="highlight-ini"><div class="highlight"><pre><span></span><span class="na">nodes</span> <span class="o">=</span><span class="s"></span>
+<span class="s">    # pkg.module:func_name</span>
+<span class="s">    marv_nodes:dataset</span>
+<span class="s">    marv_robotics.bag:bagmeta</span>
+</pre></div>
+</div>
+<p>For a list of nodes see <a class="reference internal" href="nodes.html#nodes"><span class="std std-ref">Nodes</span></a>.</p>
+</div>
+<div class="section" id="filters">
+<span id="cfg-c-filters"></span><h3>filters<a class="headerlink" href="#filters" title="Permalink to this headline">¶</a></h3>
+<p>Listings of datasets for the web frontend and API responses can be filtered.</p>
+<p>Nodes extract and process data from datasets. Node output persisted in the store is available via a node’s name. For this to happen the node needs to define a message type and be listed in <a class="reference internal" href="#cfg-c-nodes"><span class="std std-ref">nodes</span></a>. Filters and <a class="reference internal" href="#cfg-c-listing-columns"><span class="std std-ref">listing_columns</span></a> use <a class="reference internal" href="#cfg-sexp"><span class="std std-ref">S-Expressions</span></a> to extract values from node output. Via API or web frontend a user supplies filter input to be compared with the extracted value using a selected operator. A filter’s name is displayed in the web frontend and its ID is used via API.</p>
+<p>At least one operator has to be configured per filter and valid operators depend on the field type. The <code class="docutils literal"><span class="pre">tags</span></code> and <code class="docutils literal"><span class="pre">comments</span></code> filter are special and have to be defined exactly as shown below.</p>
+<p>See <a class="reference internal" href="#cfg-sexp"><span class="std std-ref">S-Expressions</span></a> on how to create functions to extract values from node output.</p>
+<p>Example:</p>
+<div class="highlight-ini"><div class="highlight"><pre><span></span><span class="na">filters</span> <span class="o">=</span><span class="s"></span>
+<span class="s">    # id     | Display Name | operators         | field type | extractor function</span>
+<span class="s">    name     | Name         | substring         | string     | (get &quot;dataset.name&quot;)</span>
+<span class="s">    setid    | Set Id       | startswith        | string     | (get &quot;dataset.id&quot;)</span>
+<span class="s">    size     | Size         | lt le eq ne ge gt | filesize   | (sum (get &quot;dataset.files[:].size&quot;))</span>
+<span class="s">    tags     | Tags         | any all           | subset     | (tags )</span>
+<span class="s">    comments | Comments     | substring         | string     | (comments )</span>
+<span class="s">    fulltext | Fulltext     | words             | words      | (get &quot;fulltext.words&quot;)</span>
+<span class="s">    files    | File paths   | substring_any     | string[]   | (get &quot;dataset.files[:].path&quot;)</span>
+<span class="s">    end_time | End time     | lt le eq ne ge gt | datetime   | (get &quot;bagmeta.end_time&quot;)</span>
+<span class="s">    duration | Duration     | lt le eq ne ge gt | timedelta  | (get &quot;bagmeta.duration&quot;)</span>
+<span class="s">    topics   | Topics       | any all           | subset     | (get &quot;bagmeta.topics[:].name&quot;)</span>
+</pre></div>
+</div>
+<p>In case you use emacs, it’s easy to align these: <code class="docutils literal"><span class="pre">C-u</span> <span class="pre">M-x</span> <span class="pre">align-regexp</span> <span class="pre">|</span> <span class="pre">RET</span> <span class="pre">RET</span> <span class="pre">y</span></code>.</p>
+<div class="section" id="field-type">
+<h4>field type<a class="headerlink" href="#field-type" title="Permalink to this headline">¶</a></h4>
+<p>The field type determines what python type the extractor function is expected to return, how this is interpreted and displayed, and what is expected as filter input.</p>
+<div class="section" id="datetime">
+<h5><code class="docutils literal"><span class="pre">datetime</span></code><a class="headerlink" href="#datetime" title="Permalink to this headline">¶</a></h5>
+<div class="line-block">
+<div class="line">extract: int, nanoseconds since epoch</div>
+<div class="line">input: int, millisecons since epoch</div>
+<div class="line">operators: <code class="docutils literal"><span class="pre">lt</span></code> <code class="docutils literal"><span class="pre">le</span></code> <code class="docutils literal"><span class="pre">eq</span></code> <code class="docutils literal"><span class="pre">ne</span></code> <code class="docutils literal"><span class="pre">ge</span></code> <code class="docutils literal"><span class="pre">gt</span></code></div>
+</div>
+</div>
+<div class="section" id="filesize">
+<h5><code class="docutils literal"><span class="pre">filesize</span></code><a class="headerlink" href="#filesize" title="Permalink to this headline">¶</a></h5>
+<div class="line-block">
+<div class="line">extract: int, bytes</div>
+<div class="line">input: int, bytes</div>
+<div class="line">operators: <code class="docutils literal"><span class="pre">lt</span></code> <code class="docutils literal"><span class="pre">le</span></code> <code class="docutils literal"><span class="pre">eq</span></code> <code class="docutils literal"><span class="pre">ne</span></code> <code class="docutils literal"><span class="pre">ge</span></code> <code class="docutils literal"><span class="pre">gt</span></code></div>
+</div>
+</div>
+<div class="section" id="string">
+<h5><code class="docutils literal"><span class="pre">string</span></code><a class="headerlink" href="#string" title="Permalink to this headline">¶</a></h5>
+<div class="line-block">
+<div class="line">extract: unicode</div>
+<div class="line">input: utf-8</div>
+<div class="line">operators: <code class="docutils literal"><span class="pre">substring</span></code>, <code class="docutils literal"><span class="pre">startswith</span></code></div>
+</div>
+</div>
+<div class="section" id="id1">
+<h5><code class="docutils literal"><span class="pre">string[]</span></code><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h5>
+<div class="line-block">
+<div class="line">extract: list of unicode</div>
+<div class="line">input: utf-8</div>
+<div class="line">operators: <code class="docutils literal"><span class="pre">substring_any</span></code></div>
+</div>
+</div>
+<div class="section" id="subset">
+<h5><code class="docutils literal"><span class="pre">subset</span></code><a class="headerlink" href="#subset" title="Permalink to this headline">¶</a></h5>
+<div class="line-block">
+<div class="line">extract: list of unicode</div>
+<div class="line">input: list of utf-8</div>
+<div class="line">operators: <code class="docutils literal"><span class="pre">any</span></code>, <code class="docutils literal"><span class="pre">all</span></code></div>
+</div>
+</div>
+<div class="section" id="timedelta">
+<h5><code class="docutils literal"><span class="pre">timedelta</span></code><a class="headerlink" href="#timedelta" title="Permalink to this headline">¶</a></h5>
+<div class="line-block">
+<div class="line">extract: int, nanoseconds</div>
+<div class="line">input: int, millisecons</div>
+<div class="line">operators: <code class="docutils literal"><span class="pre">lt</span></code> <code class="docutils literal"><span class="pre">le</span></code> <code class="docutils literal"><span class="pre">eq</span></code> <code class="docutils literal"><span class="pre">ne</span></code> <code class="docutils literal"><span class="pre">ge</span></code> <code class="docutils literal"><span class="pre">gt</span></code></div>
+</div>
+</div>
+<div class="section" id="words">
+<h5><code class="docutils literal"><span class="pre">words</span></code><a class="headerlink" href="#words" title="Permalink to this headline">¶</a></h5>
+<div class="line-block">
+<div class="line">extract: list of unicode</div>
+<div class="line">input: list of utf-8</div>
+<div class="line">operators: <code class="docutils literal"><span class="pre">words</span></code></div>
+</div>
+</div>
+</div>
+<div class="section" id="operators">
+<h4>operators<a class="headerlink" href="#operators" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="lt-le-eq-ne-ge-gt">
+<h5><code class="docutils literal"><span class="pre">lt</span></code> <code class="docutils literal"><span class="pre">le</span></code> <code class="docutils literal"><span class="pre">eq</span></code> <code class="docutils literal"><span class="pre">ne</span></code> <code class="docutils literal"><span class="pre">ge</span></code> <code class="docutils literal"><span class="pre">gt</span></code><a class="headerlink" href="#lt-le-eq-ne-ge-gt" title="Permalink to this headline">¶</a></h5>
+<p>Comparison of numeric input with numeric stored value.</p>
+</div>
+<div class="section" id="substring">
+<h5><code class="docutils literal"><span class="pre">substring</span></code><a class="headerlink" href="#substring" title="Permalink to this headline">¶</a></h5>
+<p>Match input as substring anywhere in stored string.</p>
+</div>
+<div class="section" id="startswith">
+<h5><code class="docutils literal"><span class="pre">startswith</span></code><a class="headerlink" href="#startswith" title="Permalink to this headline">¶</a></h5>
+<p>Stored string starts with input string.</p>
+</div>
+<div class="section" id="substring-any">
+<h5><code class="docutils literal"><span class="pre">substring_any</span></code><a class="headerlink" href="#substring-any" title="Permalink to this headline">¶</a></h5>
+<p>The input string is a substring of any string in a stored list of strings.</p>
+</div>
+<div class="section" id="any">
+<h5><code class="docutils literal"><span class="pre">any</span></code><a class="headerlink" href="#any" title="Permalink to this headline">¶</a></h5>
+<p>The set of input strings intersects with the set of stored strings.</p>
+</div>
+<div class="section" id="all">
+<h5><code class="docutils literal"><span class="pre">all</span></code><a class="headerlink" href="#all" title="Permalink to this headline">¶</a></h5>
+<p>The set of input strings is a subset of the set of stored strings.</p>
+</div>
+</div>
+</div>
+<div class="section" id="listing-columns">
+<span id="cfg-c-listing-columns"></span><h3>listing_columns<a class="headerlink" href="#listing-columns" title="Permalink to this headline">¶</a></h3>
+<p>Columns displayed for the collection’s listing.</p>
+<p>For certain colums the id is important, so keep the ids used in the <a class="reference internal" href="#cfg-default-config"><span class="std std-ref">Default configuration</span></a>. The heading is used as column heading, formatters are explained below and see <a class="reference internal" href="#cfg-sexp"><span class="std std-ref">S-Expressions</span></a> on how to write functions to extract values from node output.</p>
+<p>Example:</p>
+<div class="highlight-ini"><div class="highlight"><pre><span></span><span class="na">listing_columns</span> <span class="o">=</span><span class="s"></span>
+<span class="s">    # id | Heading | formatter | extractor function</span>
+<span class="s">    name | Name    | route     | (detail_route (get &quot;dataset.id&quot;) (get &quot;dataset.name&quot;))</span>
+<span class="s">    size | Size    | filesize  | (sum (get &quot;dataset.files[:].size&quot;))</span>
+</pre></div>
+</div>
+<div class="section" id="formatter">
+<span id="cfg-c-formatter"></span><h4>formatter<a class="headerlink" href="#formatter" title="Permalink to this headline">¶</a></h4>
+<p>Marv ships with a set of formatters. See <a class="reference internal" href="widgets.html#widget-custom"><span class="std std-ref">Custom</span></a> on how to override these and supply your own.</p>
+<div class="section" id="date">
+<h5><code class="docutils literal"><span class="pre">date</span></code><a class="headerlink" href="#date" title="Permalink to this headline">¶</a></h5>
+<div class="line-block">
+<div class="line">extract: int, nanoseconds since epoch</div>
+</div>
+</div>
+<div class="section" id="id2">
+<h5><code class="docutils literal"><span class="pre">datetime</span></code><a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h5>
+<div class="line-block">
+<div class="line">extract: int, nanoseconds since epoch</div>
+</div>
+</div>
+<div class="section" id="float">
+<h5><code class="docutils literal"><span class="pre">float</span></code><a class="headerlink" href="#float" title="Permalink to this headline">¶</a></h5>
+<div class="line-block">
+<div class="line">extract: float</div>
+</div>
+</div>
+<div class="section" id="icon">
+<h5><code class="docutils literal"><span class="pre">icon</span></code><a class="headerlink" href="#icon" title="Permalink to this headline">¶</a></h5>
+<p>Render a <a class="reference external" href="https://getbootstrap.com/docs/3.3/components/#glyphicons">glyphicon</a> by name (<code class="docutils literal"><span class="pre">glyphicon-&lt;name&gt;</span></code>) with optional additional space-separated css classes and a title rendered in a tooltip for the icon.</p>
+<div class="line-block">
+<div class="line">extract: <code class="docutils literal"><span class="pre">{'icon':</span> <span class="pre">name,</span> <span class="pre">'classes':</span> <span class="pre">css_classes,</span> <span class="pre">'title':</span> <span class="pre">title}</span></code></div>
+</div>
+</div>
+<div class="section" id="int">
+<h5><code class="docutils literal"><span class="pre">int</span></code><a class="headerlink" href="#int" title="Permalink to this headline">¶</a></h5>
+<div class="line-block">
+<div class="line">extract: int</div>
+</div>
+</div>
+<div class="section" id="link">
+<h5><code class="docutils literal"><span class="pre">link</span></code><a class="headerlink" href="#link" title="Permalink to this headline">¶</a></h5>
+<div class="line-block">
+<div class="line">extract: <code class="docutils literal"><span class="pre">{'href':</span> <span class="pre">'',</span> <span class="pre">'title':</span> <span class="pre">''}</span></code></div>
+</div>
+</div>
+<div class="section" id="pill">
+<h5><code class="docutils literal"><span class="pre">pill</span></code><a class="headerlink" href="#pill" title="Permalink to this headline">¶</a></h5>
+<div class="line-block">
+<div class="line">extract: unicode</div>
+</div>
+</div>
+<div class="section" id="route">
+<h5><code class="docutils literal"><span class="pre">route</span></code><a class="headerlink" href="#route" title="Permalink to this headline">¶</a></h5>
+<p>Used only for the detail route so far in conjunction with <a class="reference internal" href="#cfg-sexp-detail-route"><span class="std std-ref">detail_route</span></a>.</p>
+</div>
+<div class="section" id="id3">
+<h5><code class="docutils literal"><span class="pre">string</span></code><a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h5>
+<div class="line-block">
+<div class="line">extract: unicode</div>
+</div>
+</div>
+<div class="section" id="id4">
+<h5><code class="docutils literal"><span class="pre">timedelta</span></code><a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h5>
+<div class="line-block">
+<div class="line">extract: int, nanoseconds since epoch</div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="listing-sort">
+<span id="cfg-c-listing-sort"></span><h3>listing_sort<a class="headerlink" href="#listing-sort" title="Permalink to this headline">¶</a></h3>
+<p>Column and sort order for listing.</p>
+<p>Example:</p>
+<div class="highlight-ini"><div class="highlight"><pre><span></span><span class="na">listing_sort</span> <span class="o">=</span> <span class="s">start_time | descending</span>
+</pre></div>
+</div>
+<p>The first field corresponds to an id in <a class="reference internal" href="#cfg-c-listing-columns"><span class="std std-ref">listing_columns</span></a>, the second is one of <code class="docutils literal"><span class="pre">ascending</span></code> (default) or <code class="docutils literal"><span class="pre">descending</span></code>.</p>
+</div>
+<div class="section" id="listing-summary">
+<span id="cfg-c-listing-summary"></span><h3>listing_summary<a class="headerlink" href="#listing-summary" title="Permalink to this headline">¶</a></h3>
+<p>Summary calculated for the filtered rows of the listing.</p>
+<p>Example:</p>
+<div class="highlight-ini"><div class="highlight"><pre><span></span><span class="na">listing_summary</span> <span class="o">=</span><span class="s"></span>
+<span class="s">    # id     | Title    | formatter | extractor</span>
+<span class="s">    datasets | datasets | int       | (len (rows ))</span>
+<span class="s">    size     | size     | filesize  | (sum (rows &quot;size&quot; 0))</span>
+<span class="s">    duration | duration | timedelta | (sum (rows &quot;duration&quot; 0))</span>
+</pre></div>
+</div>
+<p>A unique id, a title to be displayed bewlo the value, a formatter explained in <a class="reference internal" href="#cfg-c-formatter"><span class="std std-ref">formatter</span></a> and extractor function explained in <a class="reference internal" href="#cfg-sexp"><span class="std std-ref">S-Expressions</span></a>.</p>
+</div>
+<div class="section" id="detail-summary-widgets">
+<span id="cfg-c-detail-summary-widgets"></span><h3>detail_summary_widgets<a class="headerlink" href="#detail-summary-widgets" title="Permalink to this headline">¶</a></h3>
+<p>List of widgets to be rendered on the first tab of the detail view, aka the summary section.</p>
+<p>Example:</p>
+<div class="highlight-ini"><div class="highlight"><pre><span></span><span class="na">detail_summary_widgets</span> <span class="o">=</span><span class="s"></span>
+<span class="s">    summary_keyval</span>
+<span class="s">    bagmeta_table</span>
+</pre></div>
+</div>
+<p>You can write your own and use some of the already existing <a class="reference internal" href="nodes.html#widget-nodes"><span class="std std-ref">Widget nodes</span></a>.</p>
+</div>
+<div class="section" id="detail-sections">
+<span id="cfg-c-detail-sections"></span><h3>detail_sections<a class="headerlink" href="#detail-sections" title="Permalink to this headline">¶</a></h3>
+<p>List of detail section to be rendered beyond the summary section. For any given dataset those sections will be rendered only if the dataset contains the necessary data. In absence of meaningful data, sections will be omitted from the web frontend detail view.</p>
+<p>Example:</p>
+<div class="highlight-ini"><div class="highlight"><pre><span></span><span class="na">detail_sections</span> <span class="o">=</span><span class="s"></span>
+<span class="s">    topics_section</span>
+<span class="s">    video_section</span>
+</pre></div>
+</div>
+<p>You can write your own and use some of the already existing <a class="reference internal" href="nodes.html#section-nodes"><span class="std std-ref">Section nodes</span></a>.</p>
+</div>
+</div>
+<div class="section" id="s-expressions">
+<span id="cfg-sexp"></span><h2>S-Expressions<a class="headerlink" href="#s-expressions" title="Permalink to this headline">¶</a></h2>
+<p>S-Expressions are used in the config file to create small functions that extract values from output of stored <a class="reference internal" href="#cfg-c-nodes"><span class="std std-ref">nodes</span></a>. S-Expressions are (nested) lists in parentheses, with list elements being separated by spaces.</p>
+<div class="highlight-lisp"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nb">get</span> <span class="s">&quot;dataset.name&quot;</span><span class="p">)</span>
+<span class="p">(</span><span class="nb">get</span> <span class="s">&quot;dataset.files[:].path&quot;</span><span class="p">)</span>
+<span class="p">(</span><span class="nv">sum</span> <span class="p">(</span><span class="nb">get</span> <span class="s">&quot;dataset.files[:].size&quot;</span><span class="p">))</span>
+<span class="p">(</span><span class="nv">tags</span> <span class="p">)</span>
+<span class="p">(</span><span class="nv">comments</span> <span class="p">)</span>
+</pre></div>
+</div>
+<p>The first element of a list is the name of a function. Any additional arguments are passed as arguments to the function and the list defining a function is replaced with its return value.</p>
+<p>Valid arguments are:</p>
+<ul class="simple">
+<li>strings enclosed in <code class="docutils literal"><span class="pre">&quot;&quot;</span></code></li>
+<li>functions enclosed in <code class="docutils literal"><span class="pre">()</span></code></li>
+<li><code class="docutils literal"><span class="pre">0</span></code> number, literal zero</li>
+</ul>
+<div class="section" id="functions">
+<h3>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h3>
+<p>Functions in S-expressions get and process data from store node output. Some may be used in all scopes <a class="reference internal" href="#cfg-c-filters"><span class="std std-ref">filters</span></a>, <a class="reference internal" href="#cfg-c-listing-columns"><span class="std std-ref">listing_columns</span></a>, and <a class="reference internal" href="#cfg-c-listing-summary"><span class="std std-ref">listing_summary</span></a>; some only in some (see below).</p>
+<div class="section" id="comments">
+<h4><code class="docutils literal"><span class="pre">comments</span></code><a class="headerlink" href="#comments" title="Permalink to this headline">¶</a></h4>
+<p>Return list of unicode objects with text of comments.</p>
+<p>scope: <a class="reference internal" href="#cfg-c-filters"><span class="std std-ref">filters</span></a>, <a class="reference internal" href="#cfg-c-listing-columns"><span class="std std-ref">listing_columns</span></a></p>
+</div>
+<div class="section" id="detail-route">
+<span id="cfg-sexp-detail-route"></span><h4><code class="docutils literal"><span class="pre">detail_route</span></code><a class="headerlink" href="#detail-route" title="Permalink to this headline">¶</a></h4>
+<p>Return dictionary rendering link to detail route of dataset. First argument is the dataset’s setid, second optional name is displayed instead of setid.</p>
+<p>scope: <a class="reference internal" href="#cfg-c-listing-columns"><span class="std std-ref">listing_columns</span></a></p>
+</div>
+<div class="section" id="format">
+<h4><code class="docutils literal"><span class="pre">format</span></code><a class="headerlink" href="#format" title="Permalink to this headline">¶</a></h4>
+<p>Wrapper for <code class="docutils literal"><span class="pre">fmt.format(*args)</span></code>. First argument is the format string <code class="docutils literal"><span class="pre">fmt</span></code>, remaining arguments are passed on.</p>
+<p>scope: <a class="reference internal" href="#cfg-c-filters"><span class="std std-ref">filters</span></a>, <a class="reference internal" href="#cfg-c-listing-columns"><span class="std std-ref">listing_columns</span></a></p>
+</div>
+<div class="section" id="get">
+<h4><code class="docutils literal"><span class="pre">get</span></code><a class="headerlink" href="#get" title="Permalink to this headline">¶</a></h4>
+<p>Get a value from a nodes output. First argument defines node and traversal into its output, second optional argument is used as default value instead of <code class="docutils literal"><span class="pre">None</span></code>.</p>
+<p>Examples:</p>
+<div class="highlight-lisp"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nb">get</span> <span class="s">&quot;bagmeta.start_time&quot;</span><span class="p">)</span>
+<span class="p">(</span><span class="nb">get</span> <span class="s">&quot;dataset.files[:].size&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The specifier starts with the nodes name. A <code class="docutils literal"><span class="pre">.</span></code> performs dictionary key lookup. Lists can be traversed into in part or full using slicing and further dictionary lookup is performed on each element of the list.</p>
+<p>scope: <a class="reference internal" href="#cfg-c-filters"><span class="std std-ref">filters</span></a>, <a class="reference internal" href="#cfg-c-listing-columns"><span class="std std-ref">listing_columns</span></a></p>
+</div>
+<div class="section" id="join">
+<h4><code class="docutils literal"><span class="pre">join</span></code><a class="headerlink" href="#join" title="Permalink to this headline">¶</a></h4>
+<p>Wrapper for <code class="docutils literal"><span class="pre">joinstr.join(args)</span></code>. First argument is the join string remaining arguments are joined with.</p>
+<p>scope: <a class="reference internal" href="#cfg-c-filters"><span class="std std-ref">filters</span></a>, <a class="reference internal" href="#cfg-c-listing-columns"><span class="std std-ref">listing_columns</span></a></p>
+</div>
+<div class="section" id="len">
+<h4><code class="docutils literal"><span class="pre">len</span></code><a class="headerlink" href="#len" title="Permalink to this headline">¶</a></h4>
+<p>Return length of first argument.</p>
+<p>scope: <a class="reference internal" href="#cfg-c-filters"><span class="std std-ref">filters</span></a>, <a class="reference internal" href="#cfg-c-listing-columns"><span class="std std-ref">listing_columns</span></a>, <a class="reference internal" href="#cfg-c-listing-summary"><span class="std std-ref">listing_summary</span></a></p>
+</div>
+<div class="section" id="id5">
+<h4><code class="docutils literal"><span class="pre">link</span></code><a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h4>
+<p>Render link with first argument as href and second argument displayed.</p>
+<p>scope: <a class="reference internal" href="#cfg-c-listing-columns"><span class="std std-ref">listing_columns</span></a></p>
+</div>
+<div class="section" id="list">
+<h4><code class="docutils literal"><span class="pre">list</span></code><a class="headerlink" href="#list" title="Permalink to this headline">¶</a></h4>
+<p>Return list consisting of arguments with arguments being None removed.</p>
+<p>scope: <a class="reference internal" href="#cfg-c-filters"><span class="std std-ref">filters</span></a>, <a class="reference internal" href="#cfg-c-listing-columns"><span class="std std-ref">listing_columns</span></a>, <a class="reference internal" href="#cfg-c-listing-summary"><span class="std std-ref">listing_summary</span></a></p>
+</div>
+<div class="section" id="max">
+<h4><code class="docutils literal"><span class="pre">max</span></code><a class="headerlink" href="#max" title="Permalink to this headline">¶</a></h4>
+<p>Return maximum element of first argument.</p>
+<p>scope: <a class="reference internal" href="#cfg-c-filters"><span class="std std-ref">filters</span></a>, <a class="reference internal" href="#cfg-c-listing-columns"><span class="std std-ref">listing_columns</span></a>, <a class="reference internal" href="#cfg-c-listing-summary"><span class="std std-ref">listing_summary</span></a></p>
+</div>
+<div class="section" id="min">
+<h4><code class="docutils literal"><span class="pre">min</span></code><a class="headerlink" href="#min" title="Permalink to this headline">¶</a></h4>
+<p>Return minimum element of first argument.</p>
+<p>scope: <a class="reference internal" href="#cfg-c-filters"><span class="std std-ref">filters</span></a>, <a class="reference internal" href="#cfg-c-listing-columns"><span class="std std-ref">listing_columns</span></a>, <a class="reference internal" href="#cfg-c-listing-summary"><span class="std std-ref">listing_summary</span></a></p>
+</div>
+<div class="section" id="rows">
+<h4><code class="docutils literal"><span class="pre">rows</span></code><a class="headerlink" href="#rows" title="Permalink to this headline">¶</a></h4>
+<p>Return all rows matching current filter criteria. The optional second argument extracts a specific column defined in <a class="reference internal" href="#cfg-c-listing-columns"><span class="std std-ref">listing_columns</span></a> instead of the full row and the third provides a default value instead of None.</p>
+<p>Examples:</p>
+<div class="highlight-lisp"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nv">sum</span> <span class="p">(</span><span class="nv">rows</span> <span class="s">&quot;size&quot;</span> <span class="mi">0</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>scope: <a class="reference internal" href="#cfg-c-listing-summary"><span class="std std-ref">listing_summary</span></a></p>
+</div>
+<div class="section" id="sum">
+<h4><code class="docutils literal"><span class="pre">sum</span></code><a class="headerlink" href="#sum" title="Permalink to this headline">¶</a></h4>
+<p>Return sum of arguments.</p>
+<p>scope: <a class="reference internal" href="#cfg-c-filters"><span class="std std-ref">filters</span></a>, <a class="reference internal" href="#cfg-c-listing-columns"><span class="std std-ref">listing_columns</span></a>, <a class="reference internal" href="#cfg-c-listing-summary"><span class="std std-ref">listing_summary</span></a></p>
+</div>
+<div class="section" id="tags">
+<h4><code class="docutils literal"><span class="pre">tags</span></code><a class="headerlink" href="#tags" title="Permalink to this headline">¶</a></h4>
+<p>Return list of tags associated with dataset.</p>
+<p>scope: <a class="reference internal" href="#cfg-c-filters"><span class="std std-ref">filters</span></a>, <a class="reference internal" href="#cfg-c-listing-columns"><span class="std std-ref">listing_columns</span></a></p>
+</div>
+<div class="section" id="trace">
+<h4><code class="docutils literal"><span class="pre">trace</span></code><a class="headerlink" href="#trace" title="Permalink to this headline">¶</a></h4>
+<p>Print trace messages.</p>
+<p>scope: <a class="reference internal" href="#cfg-c-filters"><span class="std std-ref">filters</span></a>, <a class="reference internal" href="#cfg-c-listing-columns"><span class="std std-ref">listing_columns</span></a>, <a class="reference internal" href="#cfg-c-listing-summary"><span class="std std-ref">listing_summary</span></a></p>
+</div>
+</div>
+</div>
+<div class="section" id="examples">
+<span id="cfg-examples"></span><h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="default-configuration">
+<span id="cfg-default-config"></span><h3>Default configuration<a class="headerlink" href="#default-configuration" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="c1">#</span>
+<span class="c1"># MARV Robotics default configuration file</span>
+<span class="c1">#</span>
+
+<span class="p">[</span><span class="n">marv</span><span class="p">]</span>
+<span class="n">collections</span> <span class="o">=</span> <span class="n">bags</span>
+
+
+<span class="p">[</span><span class="n">collection</span> <span class="n">bags</span><span class="p">]</span>
+<span class="n">scanner</span> <span class="o">=</span> <span class="n">marv_robotics</span><span class="o">.</span><span class="n">bag</span><span class="p">:</span><span class="n">scan</span>
+
+<span class="n">scanroots</span> <span class="o">=</span>
+    <span class="n">scanroot</span>
+
+<span class="n">nodes</span> <span class="o">=</span>
+    <span class="n">marv_nodes</span><span class="p">:</span><span class="n">dataset</span>
+    <span class="n">marv_robotics</span><span class="o">.</span><span class="n">bag</span><span class="p">:</span><span class="n">bagmeta</span>
+    <span class="n">marv_robotics</span><span class="o">.</span><span class="n">cam</span><span class="p">:</span><span class="n">ffmpeg</span>
+    <span class="n">marv_robotics</span><span class="o">.</span><span class="n">cam</span><span class="p">:</span><span class="n">images</span>
+    <span class="n">marv_robotics</span><span class="o">.</span><span class="n">fulltext</span><span class="p">:</span><span class="n">fulltext</span>
+    <span class="n">marv_robotics</span><span class="o">.</span><span class="n">gnss</span><span class="p">:</span><span class="n">gnss_plots</span>
+    <span class="n">marv_robotics</span><span class="o">.</span><span class="n">trajectory</span><span class="p">:</span><span class="n">trajectory</span>
+    <span class="c1"># summary widgets</span>
+    <span class="n">marv_robotics</span><span class="o">.</span><span class="n">detail</span><span class="p">:</span><span class="n">summary_keyval</span>
+    <span class="n">marv_robotics</span><span class="o">.</span><span class="n">detail</span><span class="p">:</span><span class="n">bagmeta_table</span>
+    <span class="c1"># detail sections</span>
+    <span class="n">marv_robotics</span><span class="o">.</span><span class="n">detail</span><span class="p">:</span><span class="n">connections_section</span>
+    <span class="n">marv_robotics</span><span class="o">.</span><span class="n">detail</span><span class="p">:</span><span class="n">images_section</span>
+    <span class="n">marv_robotics</span><span class="o">.</span><span class="n">detail</span><span class="p">:</span><span class="n">video_section</span>
+    <span class="n">marv_robotics</span><span class="o">.</span><span class="n">detail</span><span class="p">:</span><span class="n">gnss_section</span>
+    <span class="n">marv_robotics</span><span class="o">.</span><span class="n">detail</span><span class="p">:</span><span class="n">trajectory_section</span>
+
+<span class="n">filters</span> <span class="o">=</span>
+    <span class="c1"># id       | Display Name  | operators         | value type | value function</span>
+    <span class="n">name</span>       <span class="o">|</span> <span class="n">Name</span>          <span class="o">|</span> <span class="n">substring</span>         <span class="o">|</span> <span class="n">string</span>     <span class="o">|</span> <span class="p">(</span><span class="n">get</span> <span class="s2">&quot;dataset.name&quot;</span><span class="p">)</span>
+    <span class="n">setid</span>      <span class="o">|</span> <span class="n">Set</span> <span class="n">Id</span>        <span class="o">|</span> <span class="n">startswith</span>        <span class="o">|</span> <span class="n">string</span>     <span class="o">|</span> <span class="p">(</span><span class="n">get</span> <span class="s2">&quot;dataset.id&quot;</span><span class="p">)</span>
+    <span class="n">size</span>       <span class="o">|</span> <span class="n">Size</span>          <span class="o">|</span> <span class="n">lt</span> <span class="n">le</span> <span class="n">eq</span> <span class="n">ne</span> <span class="n">ge</span> <span class="n">gt</span> <span class="o">|</span> <span class="n">filesize</span>   <span class="o">|</span> <span class="p">(</span><span class="nb">sum</span> <span class="p">(</span><span class="n">get</span> <span class="s2">&quot;dataset.files[:].size&quot;</span><span class="p">))</span>
+    <span class="n">tags</span>       <span class="o">|</span> <span class="n">Tags</span>          <span class="o">|</span> <span class="nb">any</span> <span class="nb">all</span>           <span class="o">|</span> <span class="n">subset</span>     <span class="o">|</span> <span class="p">(</span><span class="n">tags</span> <span class="p">)</span>
+    <span class="n">comments</span>   <span class="o">|</span> <span class="n">Comments</span>      <span class="o">|</span> <span class="n">substring</span>         <span class="o">|</span> <span class="n">string</span>     <span class="o">|</span> <span class="p">(</span><span class="n">comments</span> <span class="p">)</span>
+    <span class="n">fulltext</span>   <span class="o">|</span> <span class="n">Fulltext</span>      <span class="o">|</span> <span class="n">words</span>             <span class="o">|</span> <span class="n">words</span>      <span class="o">|</span> <span class="p">(</span><span class="n">get</span> <span class="s2">&quot;fulltext.words&quot;</span><span class="p">)</span>
+    <span class="n">files</span>      <span class="o">|</span> <span class="n">File</span> <span class="n">paths</span>    <span class="o">|</span> <span class="n">substring_any</span>     <span class="o">|</span> <span class="n">string</span><span class="p">[]</span>   <span class="o">|</span> <span class="p">(</span><span class="n">get</span> <span class="s2">&quot;dataset.files[:].path&quot;</span><span class="p">)</span>
+    <span class="n">added_time</span> <span class="o">|</span> <span class="n">Added</span>         <span class="o">|</span> <span class="n">lt</span> <span class="n">le</span> <span class="n">eq</span> <span class="n">ne</span> <span class="n">ge</span> <span class="n">gt</span> <span class="o">|</span> <span class="n">datetime</span>   <span class="o">|</span> <span class="p">(</span><span class="n">get</span> <span class="s2">&quot;dataset.time_added&quot;</span><span class="p">)</span>
+    <span class="n">start_time</span> <span class="o">|</span> <span class="n">Start</span> <span class="n">time</span>    <span class="o">|</span> <span class="n">lt</span> <span class="n">le</span> <span class="n">eq</span> <span class="n">ne</span> <span class="n">ge</span> <span class="n">gt</span> <span class="o">|</span> <span class="n">datetime</span>   <span class="o">|</span> <span class="p">(</span><span class="n">get</span> <span class="s2">&quot;bagmeta.start_time&quot;</span><span class="p">)</span>
+    <span class="n">end_time</span>   <span class="o">|</span> <span class="n">End</span> <span class="n">time</span>      <span class="o">|</span> <span class="n">lt</span> <span class="n">le</span> <span class="n">eq</span> <span class="n">ne</span> <span class="n">ge</span> <span class="n">gt</span> <span class="o">|</span> <span class="n">datetime</span>   <span class="o">|</span> <span class="p">(</span><span class="n">get</span> <span class="s2">&quot;bagmeta.end_time&quot;</span><span class="p">)</span>
+    <span class="n">duration</span>   <span class="o">|</span> <span class="n">Duration</span>      <span class="o">|</span> <span class="n">lt</span> <span class="n">le</span> <span class="n">eq</span> <span class="n">ne</span> <span class="n">ge</span> <span class="n">gt</span> <span class="o">|</span> <span class="n">timedelta</span>  <span class="o">|</span> <span class="p">(</span><span class="n">get</span> <span class="s2">&quot;bagmeta.duration&quot;</span><span class="p">)</span>
+    <span class="n">topics</span>     <span class="o">|</span> <span class="n">Topics</span>        <span class="o">|</span> <span class="nb">any</span> <span class="nb">all</span>           <span class="o">|</span> <span class="n">subset</span>     <span class="o">|</span> <span class="p">(</span><span class="n">get</span> <span class="s2">&quot;bagmeta.topics&quot;</span><span class="p">)</span>
+    <span class="n">msg_types</span>  <span class="o">|</span> <span class="n">Message</span> <span class="n">types</span> <span class="o">|</span> <span class="nb">any</span> <span class="nb">all</span>           <span class="o">|</span> <span class="n">subset</span>     <span class="o">|</span> <span class="p">(</span><span class="n">get</span> <span class="s2">&quot;bagmeta.msg_types&quot;</span><span class="p">)</span>
+
+<span class="n">listing_columns</span> <span class="o">=</span>
+    <span class="c1"># id       | Heading    | formatter | value function</span>
+    <span class="n">name</span>       <span class="o">|</span> <span class="n">Name</span>       <span class="o">|</span> <span class="n">route</span>     <span class="o">|</span> <span class="p">(</span><span class="n">detail_route</span> <span class="p">(</span><span class="n">get</span> <span class="s2">&quot;dataset.id&quot;</span><span class="p">)</span> <span class="p">(</span><span class="n">get</span> <span class="s2">&quot;dataset.name&quot;</span><span class="p">))</span>
+    <span class="n">size</span>       <span class="o">|</span> <span class="n">Size</span>       <span class="o">|</span> <span class="n">filesize</span>  <span class="o">|</span> <span class="p">(</span><span class="nb">sum</span> <span class="p">(</span><span class="n">get</span> <span class="s2">&quot;dataset.files[:].size&quot;</span><span class="p">))</span>
+    <span class="n">tags</span>       <span class="o">|</span> <span class="n">Tags</span>       <span class="o">|</span> <span class="n">pill</span><span class="p">[]</span>    <span class="o">|</span> <span class="p">(</span><span class="n">tags</span> <span class="p">)</span>
+    <span class="n">added</span>      <span class="o">|</span> <span class="n">Added</span>      <span class="o">|</span> <span class="n">datetime</span>  <span class="o">|</span> <span class="p">(</span><span class="n">get</span> <span class="s2">&quot;dataset.time_added&quot;</span><span class="p">)</span>
+    <span class="n">start_time</span> <span class="o">|</span> <span class="n">Start</span> <span class="n">time</span> <span class="o">|</span> <span class="n">datetime</span>  <span class="o">|</span> <span class="p">(</span><span class="n">get</span> <span class="s2">&quot;bagmeta.start_time&quot;</span><span class="p">)</span>
+    <span class="n">end_time</span>   <span class="o">|</span> <span class="n">End</span> <span class="n">time</span>   <span class="o">|</span> <span class="n">datetime</span>  <span class="o">|</span> <span class="p">(</span><span class="n">get</span> <span class="s2">&quot;bagmeta.end_time&quot;</span><span class="p">)</span>
+    <span class="n">duration</span>   <span class="o">|</span> <span class="n">Duration</span>   <span class="o">|</span> <span class="n">timedelta</span> <span class="o">|</span> <span class="p">(</span><span class="n">get</span> <span class="s2">&quot;bagmeta.duration&quot;</span><span class="p">)</span>
+
+<span class="n">listing_sort</span> <span class="o">=</span> <span class="n">start_time</span> <span class="o">|</span> <span class="n">descending</span>
+
+<span class="n">listing_summary</span> <span class="o">=</span>
+    <span class="c1"># id     | Title    | formatter | extractor</span>
+    <span class="n">datasets</span> <span class="o">|</span> <span class="n">datasets</span> <span class="o">|</span> <span class="nb">int</span>       <span class="o">|</span> <span class="p">(</span><span class="nb">len</span> <span class="p">(</span><span class="n">rows</span> <span class="p">))</span>
+    <span class="n">size</span>     <span class="o">|</span> <span class="n">size</span>     <span class="o">|</span> <span class="n">filesize</span>  <span class="o">|</span> <span class="p">(</span><span class="nb">sum</span> <span class="p">(</span><span class="n">rows</span> <span class="s2">&quot;size&quot;</span> <span class="mi">0</span><span class="p">))</span>
+    <span class="n">duration</span> <span class="o">|</span> <span class="n">duration</span> <span class="o">|</span> <span class="n">timedelta</span> <span class="o">|</span> <span class="p">(</span><span class="nb">sum</span> <span class="p">(</span><span class="n">rows</span> <span class="s2">&quot;duration&quot;</span> <span class="mi">0</span><span class="p">))</span>
+
+<span class="n">detail_summary_widgets</span> <span class="o">=</span>
+    <span class="n">summary_keyval</span>
+    <span class="n">bagmeta_table</span>
+
+<span class="n">detail_sections</span> <span class="o">=</span>
+    <span class="n">connections_section</span>
+    <span class="n">images_section</span>
+    <span class="n">video_section</span>
+    <span class="n">gnss_section</span>
+    <span class="n">trajectory_section</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="system-wide-configuration">
+<h3>System-wide configuration<a class="headerlink" href="#system-wide-configuration" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal"><span class="pre">/etc/marv/marv.conf</span></code></p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">marv</span><span class="p">]</span>
+<span class="n">collections</span> <span class="o">=</span> <span class="n">bags</span>
+
+<span class="c1"># keep db/db.sqlite as the suffix!</span>
+<span class="n">dburi</span> <span class="o">=</span> <span class="n">sqlite</span><span class="p">:</span><span class="o">////</span><span class="n">var</span><span class="o">/</span><span class="n">local</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">marv</span><span class="o">/</span><span class="n">db</span><span class="o">/</span><span class="n">db</span><span class="o">.</span><span class="n">sqlite</span>
+
+<span class="c1"># store could also be somewhere else</span>
+<span class="n">store</span> <span class="o">=</span> <span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">local</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">marv</span><span class="o">/</span><span class="n">store</span>
+
+<span class="o">...</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="multiple-collections">
+<h3>Multiple collections<a class="headerlink" href="#multiple-collections" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">marv</span><span class="p">]</span>
+<span class="n">collections</span> <span class="o">=</span> <span class="n">bags</span> <span class="n">bags2</span> <span class="n">videos</span>
+
+<span class="p">[</span><span class="n">collection</span> <span class="n">bags</span><span class="p">]</span>
+<span class="n">scanner</span> <span class="o">=</span> <span class="n">marv_robotics</span><span class="o">.</span><span class="n">bag</span><span class="p">:</span><span class="n">scan</span>
+
+<span class="o">...</span>
+
+<span class="p">[</span><span class="n">collection</span> <span class="n">bags2</span><span class="p">]</span>
+<span class="n">scanner</span> <span class="o">=</span> <span class="n">marv_robotics</span><span class="o">.</span><span class="n">bag</span><span class="p">:</span><span class="n">scan</span>
+
+<span class="o">...</span>
+
+<span class="p">[</span><span class="n">collection</span> <span class="n">videos</span><span class="p">]</span>
+<span class="n">scanner</span> <span class="o">=</span> <span class="n">my_own_scanner</span><span class="p">:</span><span class="n">scan</span>
+
+<span class="o">...</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Configuration</a><ul>
+<li><a class="reference internal" href="#relative-paths">Relative paths</a></li>
+<li><a class="reference internal" href="#marv-section">marv section</a><ul>
+<li><a class="reference internal" href="#collections">collections</a></li>
+<li><a class="reference internal" href="#dburi">dburi</a></li>
+<li><a class="reference internal" href="#store">store</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#collection-section">collection section</a><ul>
+<li><a class="reference internal" href="#scanner">scanner</a></li>
+<li><a class="reference internal" href="#scanroots">scanroots</a></li>
+<li><a class="reference internal" href="#nodes">nodes</a></li>
+<li><a class="reference internal" href="#filters">filters</a><ul>
+<li><a class="reference internal" href="#field-type">field type</a><ul>
+<li><a class="reference internal" href="#datetime"><code class="docutils literal"><span class="pre">datetime</span></code></a></li>
+<li><a class="reference internal" href="#filesize"><code class="docutils literal"><span class="pre">filesize</span></code></a></li>
+<li><a class="reference internal" href="#string"><code class="docutils literal"><span class="pre">string</span></code></a></li>
+<li><a class="reference internal" href="#id1"><code class="docutils literal"><span class="pre">string[]</span></code></a></li>
+<li><a class="reference internal" href="#subset"><code class="docutils literal"><span class="pre">subset</span></code></a></li>
+<li><a class="reference internal" href="#timedelta"><code class="docutils literal"><span class="pre">timedelta</span></code></a></li>
+<li><a class="reference internal" href="#words"><code class="docutils literal"><span class="pre">words</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#operators">operators</a><ul>
+<li><a class="reference internal" href="#lt-le-eq-ne-ge-gt"><code class="docutils literal"><span class="pre">lt</span></code> <code class="docutils literal"><span class="pre">le</span></code> <code class="docutils literal"><span class="pre">eq</span></code> <code class="docutils literal"><span class="pre">ne</span></code> <code class="docutils literal"><span class="pre">ge</span></code> <code class="docutils literal"><span class="pre">gt</span></code></a></li>
+<li><a class="reference internal" href="#substring"><code class="docutils literal"><span class="pre">substring</span></code></a></li>
+<li><a class="reference internal" href="#startswith"><code class="docutils literal"><span class="pre">startswith</span></code></a></li>
+<li><a class="reference internal" href="#substring-any"><code class="docutils literal"><span class="pre">substring_any</span></code></a></li>
+<li><a class="reference internal" href="#any"><code class="docutils literal"><span class="pre">any</span></code></a></li>
+<li><a class="reference internal" href="#all"><code class="docutils literal"><span class="pre">all</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#listing-columns">listing_columns</a><ul>
+<li><a class="reference internal" href="#formatter">formatter</a><ul>
+<li><a class="reference internal" href="#date"><code class="docutils literal"><span class="pre">date</span></code></a></li>
+<li><a class="reference internal" href="#id2"><code class="docutils literal"><span class="pre">datetime</span></code></a></li>
+<li><a class="reference internal" href="#float"><code class="docutils literal"><span class="pre">float</span></code></a></li>
+<li><a class="reference internal" href="#icon"><code class="docutils literal"><span class="pre">icon</span></code></a></li>
+<li><a class="reference internal" href="#int"><code class="docutils literal"><span class="pre">int</span></code></a></li>
+<li><a class="reference internal" href="#link"><code class="docutils literal"><span class="pre">link</span></code></a></li>
+<li><a class="reference internal" href="#pill"><code class="docutils literal"><span class="pre">pill</span></code></a></li>
+<li><a class="reference internal" href="#route"><code class="docutils literal"><span class="pre">route</span></code></a></li>
+<li><a class="reference internal" href="#id3"><code class="docutils literal"><span class="pre">string</span></code></a></li>
+<li><a class="reference internal" href="#id4"><code class="docutils literal"><span class="pre">timedelta</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#listing-sort">listing_sort</a></li>
+<li><a class="reference internal" href="#listing-summary">listing_summary</a></li>
+<li><a class="reference internal" href="#detail-summary-widgets">detail_summary_widgets</a></li>
+<li><a class="reference internal" href="#detail-sections">detail_sections</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#s-expressions">S-Expressions</a><ul>
+<li><a class="reference internal" href="#functions">Functions</a><ul>
+<li><a class="reference internal" href="#comments"><code class="docutils literal"><span class="pre">comments</span></code></a></li>
+<li><a class="reference internal" href="#detail-route"><code class="docutils literal"><span class="pre">detail_route</span></code></a></li>
+<li><a class="reference internal" href="#format"><code class="docutils literal"><span class="pre">format</span></code></a></li>
+<li><a class="reference internal" href="#get"><code class="docutils literal"><span class="pre">get</span></code></a></li>
+<li><a class="reference internal" href="#join"><code class="docutils literal"><span class="pre">join</span></code></a></li>
+<li><a class="reference internal" href="#len"><code class="docutils literal"><span class="pre">len</span></code></a></li>
+<li><a class="reference internal" href="#id5"><code class="docutils literal"><span class="pre">link</span></code></a></li>
+<li><a class="reference internal" href="#list"><code class="docutils literal"><span class="pre">list</span></code></a></li>
+<li><a class="reference internal" href="#max"><code class="docutils literal"><span class="pre">max</span></code></a></li>
+<li><a class="reference internal" href="#min"><code class="docutils literal"><span class="pre">min</span></code></a></li>
+<li><a class="reference internal" href="#rows"><code class="docutils literal"><span class="pre">rows</span></code></a></li>
+<li><a class="reference internal" href="#sum"><code class="docutils literal"><span class="pre">sum</span></code></a></li>
+<li><a class="reference internal" href="#tags"><code class="docutils literal"><span class="pre">tags</span></code></a></li>
+<li><a class="reference internal" href="#trace"><code class="docutils literal"><span class="pre">trace</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#examples">Examples</a><ul>
+<li><a class="reference internal" href="#default-configuration">Default configuration</a></li>
+<li><a class="reference internal" href="#system-wide-configuration">System-wide configuration</a></li>
+<li><a class="reference internal" href="#multiple-collections">Multiple collections</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="views.html" title="previous chapter">Views</a></li>
+      <li>Next: <a href="scan.html" title="next chapter">Scanner</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/config.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016-2018, Ternaris.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/config.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

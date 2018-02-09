@@ -1,0 +1,251 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Installation &#8212; MARV 3.1.0 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/sphinx_paramlinks.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '3.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Tutorial: Setup basic site" href="tutorial/setup-basic-site.html" />
+    <link rel="prev" title="MARV Robotics" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="installation">
+<span id="install"></span><h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
+<p>MARV Robotics is implemented in Python using the MARV framework. Most of its Python dependencies will be installed via Python’s package management tools. Apart from these, ROS and some system libraries need to be installed, as outline in the following section.</p>
+<div class="section" id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this headline">¶</a></h2>
+<p><em>EE</em>:</p>
+<ul class="simple">
+<li><a class="reference external" href="http://wiki.ros.org/ROS/Installation">Robot Operating System (ROS)</a></li>
+<li>Checkout of your release of MARV Robotics EE</li>
+</ul>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> ls -1
+<span class="go">marvee  # checkout of your MARV Robotics EE</span>
+<span class="gp">$</span> ln -s marvee/requirements.txt .
+<span class="gp">$</span> ln -s marvee/code/marv/docs/tutorial .
+<span class="gp">$</span> ls -1
+<span class="go">marvee</span>
+<span class="go">requirements.txt</span>
+<span class="go">tutorial</span>
+</pre></div>
+</div>
+<p><em>CE</em></p>
+<ul class="simple">
+<li><a class="reference external" href="http://wiki.ros.org/ROS/Installation">Robot Operating System (ROS)</a></li>
+<li>Checkout of <a class="reference external" href="https://github.com/ternaris/marv">https://github.com/ternaris/marv</a></li>
+</ul>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> ls -1
+<span class="go">marv  # checkout of marv community edition</span>
+<span class="gp">$</span> curl -LO https://raw.githubusercontent.com/ternaris/marv-robotics/master/requirements.txt
+<span class="gp">$</span> ln -s marv/docs/tutorial .
+<span class="gp">$</span> ls -1
+<span class="go">marv</span>
+<span class="go">requirements.txt</span>
+<span class="go">tutorial</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="robot-operating-system">
+<span id="ros-install"></span><h2>Robot Operating System<a class="headerlink" href="#robot-operating-system" title="Permalink to this headline">¶</a></h2>
+<p>We assume you have working installation of ROS installed. MARV Robotics is meant to support all alive ROS releases (starting with kinetic). If you encounter difficulties with these, please report back!</p>
+<p>We dropped support for Indigo due to outdated system dependencies that cannot be easily upgraded. If you need indigo support please let us know.</p>
+<p>On an Ubuntu system the following are needed (as root). In case you succeeded installing ROS on anything else than Ubuntu, we trust you’ll also succeed to transfer the following lines to the system you are installing to.</p>
+<div class="section" id="kinetic">
+<h3>Kinetic<a class="headerlink" href="#kinetic" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">#</span> apt-get install capnproto <span class="se">\</span>
+                  curl <span class="se">\</span>
+                  ffmpeg <span class="se">\</span>
+                  libcapnp-dev <span class="se">\</span>
+                  libjpeg-dev <span class="se">\</span>
+                  libz-dev <span class="se">\</span>
+                  python-cv-bridge <span class="se">\</span>
+                  python2.7-dev <span class="se">\</span>
+                  python-opencv <span class="se">\</span>
+                  python-virtualenv <span class="se">\</span>
+                  ros-kinetic-laser-geometry <span class="se">\</span>
+                  ros-kinetic-ros-base
+<span class="go">...</span>
+<span class="gp">#</span> rosdep init
+</pre></div>
+</div>
+<p>Make sure ROS is set-up correctly for your user (not as root):</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> rosdep update
+<span class="gp">$</span> <span class="nb">source</span> /opt/ros/kinetic/setup.bash
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="marv-robotics">
+<span id="marv-install"></span><h2>MARV Robotics<a class="headerlink" href="#marv-robotics" title="Permalink to this headline">¶</a></h2>
+<p>MARV Robotics is a Python application. For increased reproducability of installations we use a virtual python environment and a set of frozen requirements for installation.</p>
+<div class="section" id="create-virtualenv">
+<h3>Create virtualenv<a class="headerlink" href="#create-virtualenv" title="Permalink to this headline">¶</a></h3>
+<p>Create a Python virtual environment, activate it and update its package management tools:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> virtualenv -p python2.7 --system-site-packages venv
+<span class="gp">$</span> <span class="nb">source</span> venv/bin/activate
+<span class="gp">$</span> pip install -U pip setuptools pip-tools
+</pre></div>
+</div>
+<p>Test whether ROS is available from within the activated virtualenv, as a result of the <code class="docutils literal"><span class="pre">--system-site-packages</span></code> option. The <code class="docutils literal"><span class="pre">(venv)</span></code> prefix indicates the activated virtualenv:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(venv) $</span> python -c <span class="s1">&#39;import rosbag; print(&quot;rosbag available&quot;)&#39;</span>
+<span class="go">rosbag available</span>
+</pre></div>
+</div>
+<p>For more information see <a class="reference external" href="http://docs.python-guide.org/en/latest/dev/virtualenvs/">Virtual Environments</a>.</p>
+</div>
+<div class="section" id="install-requirements">
+<h3>Install requirements<a class="headerlink" href="#install-requirements" title="Permalink to this headline">¶</a></h3>
+<p>Let’s synchronize the virtual environment to exactly those packages we want.</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(venv) $</span> pip-sync requirements.txt
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last"><code class="docutils literal"><span class="pre">pip-sync</span></code> will remove everything from the virtual environment that is not mentioned in <code class="docutils literal"><span class="pre">requirements.txt</span></code>! That is not an issue if you use it only for marv as outlined in this installation manual.</p>
+</div>
+</div>
+<div class="section" id="install-marv-robotics">
+<h3>Install MARV Robotics<a class="headerlink" href="#install-marv-robotics" title="Permalink to this headline">¶</a></h3>
+<p><em>EE</em>:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(venv) $</span> pip install --no-index --find-links<span class="o">=</span><span class="s1">&#39;&#39;</span> marvee/code/*
+</pre></div>
+</div>
+<p><em>CE</em>:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(venv) $</span> pip install marv-robotics
+</pre></div>
+</div>
+<p>Verify MARV Robotics is successfully installed:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(venv) $</span> marv --help
+</pre></div>
+</div>
+<p><code class="docutils literal"><span class="pre">marv</span> <span class="pre">--help</span></code> should print marv’s usage instructions. In the following sections we assume that your virtualenv is activated. If <code class="docutils literal"><span class="pre">marv</span></code> cannot be found, chances are that the virtualenv containing MARV Robotics is not activated.</p>
+</div>
+</div>
+<div class="section" id="serve-documentation">
+<h2>Serve documentation<a class="headerlink" href="#serve-documentation" title="Permalink to this headline">¶</a></h2>
+<p>Let’s dedicate a terminal to start a small webserver to serve the documentation. Actually, to serve MARV Robotics EE already, which contains the documenation.</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(venv) $</span> uwsgi --ini tutorial/docs-only-site/uwsgi-dev.conf
+</pre></div>
+</div>
+<p>Now you have an instance of MARV running at: <a class="reference external" href="http://localhost:8000">http://localhost:8000</a>.</p>
+<p>It’s documentation is linked in the footer and served at: <a class="reference external" href="http://localhost:8000/docs/">http://localhost:8000/docs/</a></p>
+<p>If you are running marv inside a container, make sure port 8000 is forwarded to outside the container.</p>
+<p>Let’s switch to your <a class="reference external" href="http://localhost:8000/docs/install.html#serve-documentation">locally served documentation</a>.</p>
+</div>
+<div class="section" id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Permalink to this headline">¶</a></h2>
+<p>Based on an existing ROS installation, you installed some system dependencies, created a virtual python environment, installed MARV Robotics EE into it, and started a webserver with marv and its documentation:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> ls -1
+<span class="go">...</span>
+<span class="go">tutorial  # link to tutorial directory</span>
+<span class="go">venv      # python virtualenv</span>
+</pre></div>
+</div>
+<p>Now your are ready to <a class="reference external" href="./tutorial/setup-basic-site.html">setup a basic site</a>.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Installation</a><ul>
+<li><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li><a class="reference internal" href="#robot-operating-system">Robot Operating System</a><ul>
+<li><a class="reference internal" href="#kinetic">Kinetic</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#marv-robotics">MARV Robotics</a><ul>
+<li><a class="reference internal" href="#create-virtualenv">Create virtualenv</a></li>
+<li><a class="reference internal" href="#install-requirements">Install requirements</a></li>
+<li><a class="reference internal" href="#install-marv-robotics">Install MARV Robotics</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#serve-documentation">Serve documentation</a></li>
+<li><a class="reference internal" href="#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">MARV Robotics</a></li>
+      <li>Next: <a href="tutorial/setup-basic-site.html" title="next chapter">Tutorial: Setup basic site</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/install.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016-2018, Ternaris.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/install.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

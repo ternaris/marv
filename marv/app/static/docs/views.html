@@ -1,0 +1,129 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Views &#8212; MARV 3.1.0 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/sphinx_paramlinks.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '3.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Configuration" href="config.html" />
+    <link rel="prev" title="Debugging" href="debug.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="views">
+<span id="id1"></span><h1>Views<a class="headerlink" href="#views" title="Permalink to this headline">¶</a></h1>
+<p>The frontend shipping with marv features:</p>
+<ul class="simple">
+<li>a listing view served at the root of the application,</li>
+<li>a detail view to introspect individual data sets</li>
+</ul>
+<p>Listing and detail view are specific to the selected collection. The displayed collection is selected via a drop-down in the header.</p>
+<div class="section" id="listing">
+<h2>Listing<a class="headerlink" href="#listing" title="Permalink to this headline">¶</a></h2>
+<p>The listing view consists of the following sections:</p>
+<ul class="simple">
+<li>A filter section that determines the data sets loaded from the server into the listing view (see <a class="reference internal" href="config.html#cfg-c-filters"><span class="std std-ref">filters</span></a>).</li>
+<li>A summary on the loaded data sets (see <a class="reference internal" href="config.html#cfg-c-listing-summary"><span class="std std-ref">listing_summary</span></a>).</li>
+<li>A set of fancy filter widgets to refine the search on loaded data sets (EE only). For the default set of filter widgets to appear all of the following <a class="reference internal" href="config.html#cfg-c-listing-columns"><span class="std std-ref">listing_columns</span></a> need to be available: <code class="docutils literal"><span class="pre">added</span></code>, <code class="docutils literal"><span class="pre">duration</span></code>, <code class="docutils literal"><span class="pre">end_time</span></code>, and <code class="docutils literal"><span class="pre">start_time</span></code>.</li>
+<li>A table listing the matching data sets (see <a class="reference internal" href="config.html#cfg-c-listing-columns"><span class="std std-ref">listing_columns</span></a>)</li>
+</ul>
+</div>
+<div class="section" id="detail">
+<h2>Detail<a class="headerlink" href="#detail" title="Permalink to this headline">¶</a></h2>
+<p>In order to introspect individual data sets, the first listing column is usually configured to route to the detail view.</p>
+<p>The detail view consists of <a class="reference internal" href="config.html#cfg-c-detail-sections"><span class="std std-ref">detail_sections</span></a> organized as tabs. The first section is special in that it always exists. It displays a list of <a class="reference internal" href="config.html#cfg-c-detail-summary-widgets"><span class="std std-ref">detail_summary_widgets</span></a> and widgets for tagging and commenting.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Views</a><ul>
+<li><a class="reference internal" href="#listing">Listing</a></li>
+<li><a class="reference internal" href="#detail">Detail</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="debug.html" title="previous chapter">Debugging</a></li>
+      <li>Next: <a href="config.html" title="next chapter">Configuration</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/views.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016-2018, Ternaris.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/views.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

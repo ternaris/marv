@@ -1,0 +1,171 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Scanner &#8212; MARV 3.1.0 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/sphinx_paramlinks.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '3.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Nodes" href="nodes.html" />
+    <link rel="prev" title="Configuration" href="config.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="scanner">
+<span id="scan"></span><h1>Scanner<a class="headerlink" href="#scanner" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="ros-bag-file-sets">
+<h2>ROS bag file sets<a class="headerlink" href="#ros-bag-file-sets" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="marv_robotics.bag.scan">
+<code class="descclassname">marv_robotics.bag.</code><code class="descname">scan</code><span class="sig-paren">(</span><em>dirpath</em>, <em>dirnames</em>, <em>filenames</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/marv_robotics/bag.html#scan"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marv_robotics.bag.scan" title="Permalink to this definition">¶</a></dt>
+<dd><p>Default scanner for ROS bag files</p>
+<p>Bags suffixed with a consecutive index are grouped into sets:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">foo_0</span><span class="o">.</span><span class="n">bag</span>
+<span class="n">foo_1</span><span class="o">.</span><span class="n">bag</span>
+<span class="n">foo_3</span><span class="o">.</span><span class="n">bag</span>
+<span class="n">foo_4</span><span class="o">.</span><span class="n">bag</span>
+</pre></div>
+</div>
+<p>results in:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">foo</span>   <span class="p">[</span><span class="n">foo_0</span><span class="o">.</span><span class="n">bag</span><span class="p">,</span> <span class="n">foo_1</span><span class="o">.</span><span class="n">bag</span><span class="p">]</span>
+<span class="n">foo_3</span> <span class="p">[</span><span class="n">foo_3</span><span class="o">.</span><span class="n">bag</span><span class="p">]</span>
+<span class="n">foo_4</span> <span class="p">[</span><span class="n">foo_4</span><span class="o">.</span><span class="n">bag</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>In this example the bag with index 2 is missing which results in
+foo_3 and foo_4 to be individual sets with one bag each.</p>
+<p>The timestamps used by <code class="docutils literal"><span class="pre">rosbag</span> <span class="pre">record</span></code> are stripped from the
+name given to sets, but are kept for the remaining individual sets
+in case a bag is missing:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">foo_2018</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">14</span><span class="o">-</span><span class="mi">05</span><span class="o">-</span><span class="mi">12</span><span class="n">_0</span><span class="o">.</span><span class="n">bag</span>
+<span class="n">foo_2018</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">14</span><span class="o">-</span><span class="mi">45</span><span class="o">-</span><span class="mi">23</span><span class="n">_1</span><span class="o">.</span><span class="n">bag</span>
+<span class="n">foo_2018</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">14</span><span class="o">-</span><span class="mi">55</span><span class="o">-</span><span class="mi">42</span><span class="n">_3</span><span class="o">.</span><span class="n">bag</span>
+</pre></div>
+</div>
+<p>results in:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">foo</span> <span class="p">[</span><span class="n">foo_2018</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">14</span><span class="o">-</span><span class="mi">05</span><span class="o">-</span><span class="mi">12</span><span class="n">_0</span><span class="o">.</span><span class="n">bag</span><span class="p">,</span>
+     <span class="n">foo_2018</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">14</span><span class="o">-</span><span class="mi">45</span><span class="o">-</span><span class="mi">23</span><span class="n">_1</span><span class="o">.</span><span class="n">bag</span><span class="p">]</span>
+<span class="n">foo_2018</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">14</span><span class="o">-</span><span class="mi">45</span><span class="o">-</span><span class="mi">23</span><span class="n">_1</span> <span class="p">[</span><span class="n">foo_2018</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">14</span><span class="o">-</span><span class="mi">45</span><span class="o">-</span><span class="mi">23</span><span class="n">_1</span><span class="o">.</span><span class="n">bag</span><span class="p">]</span>
+<span class="n">foo_2018</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">14</span><span class="o">-</span><span class="mi">55</span><span class="o">-</span><span class="mi">42</span><span class="n">_3</span> <span class="p">[</span><span class="n">foo_2018</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">14</span><span class="o">-</span><span class="mi">55</span><span class="o">-</span><span class="mi">42</span><span class="n">_3</span><span class="o">.</span><span class="n">bag</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>For more information on scanners see <a class="reference internal" href="api/marv.html#module-marv.scanner" title="marv.scanner"><code class="xref any py py-mod docutils literal"><span class="pre">marv.scanner</span></code></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><span class="target" id="marv_robotics.bag.scan.params.dirpath"></span><strong>dirpath</strong><a class="paramlink headerlink reference internal" href="#marv_robotics.bag.scan.params.dirpath">¶</a> – The path to the directory currently being
+scanned.</li>
+<li><span class="target" id="marv_robotics.bag.scan.params.dirnames"></span><strong>dirnames</strong><a class="paramlink headerlink reference internal" href="#marv_robotics.bag.scan.params.dirnames">¶</a> – Sorted list of subdirectories of the directory
+currently being scanned.  Change this in-place to control
+further traversal.</li>
+<li><span class="target" id="marv_robotics.bag.scan.params.filenames"></span><strong>filenames</strong><a class="paramlink headerlink reference internal" href="#marv_robotics.bag.scan.params.filenames">¶</a> – Sorted list of files within the directory
+currently being scanned.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A list of <a class="reference internal" href="api/marv.html#marv.scanner.DatasetInfo" title="marv.scanner.DatasetInfo"><code class="xref py py-class docutils literal"><span class="pre">marv.scanner.DatasetInfo</span></code></a> instances mapping
+set of files to dataset names.  Absolute filenames must
+start with <code class="xref py py-paramref docutils literal"><span class="pre">dirpath</span></code>, relative filenames are
+automatically prefixed with it.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>See <a class="reference internal" href="config.html#cfg-c-scanner"><span class="std std-ref">scanner</span></a> config key.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Scanner</a><ul>
+<li><a class="reference internal" href="#ros-bag-file-sets">ROS bag file sets</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="config.html" title="previous chapter">Configuration</a></li>
+      <li>Next: <a href="nodes.html" title="next chapter">Nodes</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/scan.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016-2018, Ternaris.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/scan.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

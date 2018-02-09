@@ -1,0 +1,248 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>HTTP API &#8212; MARV 3.1.0 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/sphinx_paramlinks.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '3.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Deployment" href="deploy.html" />
+    <link rel="prev" title="Widgets" href="widgets.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="http-api">
+<span id="httpapi"></span><h1>HTTP API<a class="headerlink" href="#http-api" title="Permalink to this headline">¶</a></h1>
+<p>The API used between frontend and backend currently serves also for integration with other services. We are aware that this is suboptimal and will provide a proper versioned API in one of the next releases. Meanwhile this works and migration will be minimal.</p>
+<p>To work with the API on the command line it is handy to have <a class="reference external" href="https://curl.haxx.se/">curl</a> and <a class="reference external" href="https://stedolan.github.io/jq/">jq</a>.</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>sudo apt-get install curl jq
+</pre></div>
+</div>
+<p>Set an environment variable for the API.</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">MARV_API</span><span class="o">=</span>http://localhost:8000/marv/api
+</pre></div>
+</div>
+<div class="section" id="auth">
+<span id="httpapi-auth"></span><h2>Auth<a class="headerlink" href="#auth" title="Permalink to this headline">¶</a></h2>
+<p>For some API calls you need to be authenticated, let’s get a token, and set handy environment vars.</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span><span class="nb">echo</span> -n <span class="s2">&quot;Enter username: &quot;</span><span class="p">;</span> <span class="nb">read</span> -s MARV_USER <span class="o">&amp;&amp;</span> <span class="nb">echo</span> <span class="o">&amp;&amp;</span> <span class="se">\</span>
+<span class="nb">echo</span> -n <span class="s2">&quot;Enter password: &quot;</span><span class="p">;</span> <span class="nb">read</span> -s MARV_PASS <span class="o">&amp;&amp;</span> <span class="nb">echo</span> <span class="o">&amp;&amp;</span> <span class="se">\</span>
+<span class="nv">TOKEN</span><span class="o">=</span><span class="k">$(</span>curl -s -X POST -H <span class="s2">&quot;Content-Type: application/json&quot;</span> <span class="se">\</span>
+  -d <span class="s1">&#39;{&quot;username&quot;: &quot;&#39;</span><span class="nv">$MARV_USER</span><span class="s1">&#39;&quot;, &quot;password&quot;: &quot;&#39;</span><span class="nv">$MARV_PASS</span><span class="s1">&#39;&quot;}&#39;</span> <span class="se">\</span>
+  <span class="nv">$MARV_API</span>/auth <span class="p">|</span> jq -r .access_token<span class="k">)</span> <span class="o">&amp;&amp;</span> <span class="se">\</span>
+<span class="nb">echo</span> <span class="nv">$TOKEN</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="listing">
+<h2>Listing<a class="headerlink" href="#listing" title="Permalink to this headline">¶</a></h2>
+<p>MARV knows two kind of ids for dataset.</p>
+<ol class="arabic simple">
+<li>setid; a random 128 bit integer, base32 encoded without padding chars, e.g. <code class="docutils literal"><span class="pre">h27zmwsdzcnmu6kqncwdhhvrva</span></code></li>
+<li>id; id of the dataset within the database, e.g. <code class="docutils literal"><span class="pre">42</span></code></li>
+</ol>
+<p>While the set id is unique for all times and across sites, for many interactions it is more efficient to use the database id.</p>
+<p>Fetch id of all datasets:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>curl <span class="nv">$MARV_API</span>/collection <span class="p">|</span>jq <span class="s1">&#39;.listing.widget.data.rows[] | .id&#39;</span>
+</pre></div>
+</div>
+<p>And likewise for setid:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>curl <span class="nv">$MARV_API</span>/collection <span class="p">|</span>jq <span class="s1">&#39;.listing.widget.data.rows[] | .setid&#39;</span>
+</pre></div>
+</div>
+<div class="section" id="filter">
+<h3>Filter<a class="headerlink" href="#filter" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>curl -G <span class="se">\</span>
+  --data-urlencode <span class="se">\</span>
+  <span class="s1">&#39;filter={&quot;name&quot;: {&quot;op&quot;: &quot;substring&quot;, &quot;val&quot;: &quot;leica&quot;}}&#39;</span> <span class="se">\</span>
+  <span class="nv">$MARV_API</span>/collection <span class="se">\</span>
+  <span class="p">|</span>jq <span class="s1">&#39;.listing.widget.data.rows[] | .setid&#39;</span>
+</pre></div>
+</div>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>curl -G <span class="se">\</span>
+  --data-urlencode <span class="se">\</span>
+  <span class="s1">&#39;filter={&quot;tags&quot;: {&quot;op&quot;: &quot;all&quot;, &quot;val&quot;: [&quot;bar&quot;, &quot;foo&quot;]}}&#39;</span> <span class="se">\</span>
+  <span class="nv">$MARV_API</span>/collection <span class="se">\</span>
+  <span class="p">|</span>jq <span class="s1">&#39;.listing.widget.data.rows[] | .setid&#39;</span>
+</pre></div>
+</div>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>curl -G <span class="se">\</span>
+  --data-urlencode <span class="se">\</span>
+  <span class="s1">&#39;filter={&quot;tags&quot;: {&quot;op&quot;: &quot;any&quot;, &quot;val&quot;: [&quot;bar&quot;, &quot;foo&quot;]}}&#39;</span> <span class="se">\</span>
+  <span class="nv">$MARV_API</span>/collection <span class="se">\</span>
+  <span class="p">|</span>jq <span class="s1">&#39;.listing.widget.data.rows[] | .setid&#39;</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="list-of-dataset-files">
+<h2>List of dataset files<a class="headerlink" href="#list-of-dataset-files" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>curl -X POST <span class="se">\</span>
+     -H <span class="s2">&quot;Content-Type: application/json&quot;</span> <span class="se">\</span>
+     -d <span class="s2">&quot;[42]&quot;</span> <span class="se">\</span>
+     <span class="nv">$MARV_API</span>/file-list
+</pre></div>
+</div>
+<p>output:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s2">&quot;paths&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="s2">&quot;/scanroot/scan_odom_map_test.bag&quot;</span><span class="p">,</span>
+  <span class="p">],</span>
+  <span class="s2">&quot;urls&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="s2">&quot;dataset/h27zmwsdzcnmu6kqncwdhhvrva/0&quot;</span><span class="p">,</span>
+  <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="download">
+<h2>Download<a class="headerlink" href="#download" title="Permalink to this headline">¶</a></h2>
+<p>First file of dataset</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>curl -OJ <span class="nv">$MARV_API</span>/dataset/h27zmwsdzcnmu6kqncwdhhvrva/0
+</pre></div>
+</div>
+</div>
+<div class="section" id="comment">
+<h2>Comment<a class="headerlink" href="#comment" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>curl -X POST <span class="se">\</span>
+     -H <span class="s2">&quot;Authorization: Bearer </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span> <span class="se">\</span>
+     -H <span class="s2">&quot;Content-Type: application/json&quot;</span> <span class="se">\</span>
+     -d <span class="s1">&#39;{&quot;42&quot;: {&quot;add&quot;: [&quot;comment 1&quot;, &quot;comment 2&quot;]}}&#39;</span> <span class="se">\</span>
+     <span class="nv">$MARV_API</span>/comment
+</pre></div>
+</div>
+<p>output:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="p">{}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="delete">
+<h2>Delete<a class="headerlink" href="#delete" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>curl -X DELETE <span class="se">\</span>
+     -H <span class="s2">&quot;Authorization: Bearer </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span> <span class="se">\</span>
+     -H <span class="s2">&quot;Content-Type: application/json&quot;</span> <span class="se">\</span>
+     -d <span class="s2">&quot;[1,2]&quot;</span> <span class="se">\</span>
+     <span class="nv">$MARV_API</span>/dataset
+</pre></div>
+</div>
+<p>output:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="p">{}</span>
+</pre></div>
+</div>
+<p>Deletion is idempotent.</p>
+</div>
+<div class="section" id="tag">
+<h2>Tag<a class="headerlink" href="#tag" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>curl -X POST <span class="se">\</span>
+     -H <span class="s2">&quot;Authorization: Bearer </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span> <span class="se">\</span>
+     -H <span class="s2">&quot;Content-Type: application/json&quot;</span> <span class="se">\</span>
+     -d <span class="s1">&#39;{&quot;bags&quot;: {&quot;add&quot;: {&quot;foo&quot;: [42]}, &quot;remove&quot;: {&quot;bar&quot;: [17,42]}}}&#39;</span> <span class="se">\</span>
+     <span class="nv">$MARV_API</span>/tag
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="p">{}</span>
+</pre></div>
+</div>
+<p>Tagging is idempotent, missing tags are created, unused tags are not automatically cleaned up (see <a class="reference internal" href="maintenance.html#maintenance"><span class="std std-ref">Maintenance</span></a>).</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">HTTP API</a><ul>
+<li><a class="reference internal" href="#auth">Auth</a></li>
+<li><a class="reference internal" href="#listing">Listing</a><ul>
+<li><a class="reference internal" href="#filter">Filter</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#list-of-dataset-files">List of dataset files</a></li>
+<li><a class="reference internal" href="#download">Download</a></li>
+<li><a class="reference internal" href="#comment">Comment</a></li>
+<li><a class="reference internal" href="#delete">Delete</a></li>
+<li><a class="reference internal" href="#tag">Tag</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="widgets.html" title="previous chapter">Widgets</a></li>
+      <li>Next: <a href="deploy.html" title="next chapter">Deployment</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/httpapi.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016-2018, Ternaris.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/httpapi.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

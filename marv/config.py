@@ -22,13 +22,17 @@
 from __future__ import absolute_import, division, print_function
 
 import os
+import sys
 from inspect import getmembers
 from collections import Mapping
 from functools import partial
+from logging import getLogger
 
 from configparser import ConfigParser
 
 from .utils import find_obj
+
+log = getLogger(__name__)
 
 
 class ConfigError(Exception):
@@ -41,13 +45,14 @@ class ConfigError(Exception):
         return '{} [{}] {}: {}'.format(section.filename, section.name, key, message)
 
 
-def make_funcs(dataset, setdir, nodes):
+def make_funcs(dataset, setdir, store):
     """Functions available for listing columns and filters."""
     return {
+        'cat': lambda *lists: [x for lst in lists for x in lst],
         'comments': lambda: None,
         'detail_route': detail_route,
         'format': lambda fmt, *args: fmt.format(*args),
-        'get': partial(getnode, dataset, setdir, nodes),
+        'get': partial(getnode, dataset, setdir, store),
         'join': lambda sep, *args: sep.join([x for x in args if x]),
         'len': len,
         'link': (lambda href, title, target=None:
@@ -60,7 +65,7 @@ def make_funcs(dataset, setdir, nodes):
         'status': lambda: ['#STATUS#'],
         'sum': sum,
         'tags': lambda: ['#TAGS#'],
-        'trace': print_trace
+        'trace': print_trace,
     }
 
 
@@ -119,23 +124,29 @@ def doget(value, name, lookup):
     return value
 
 
-def getnode(dataset, setdir, nodes, objpath, default=None, _name_only=False):
+def getnode(dataset, setdir, store, objpath, default=None, _name_only=False):
     try:
         nodename, rest = objpath.split('.', 1)
     except ValueError:
-        nodename, rest = rest, None
+        nodename, rest = objpath, None
     nodename, lookup = parse_lookup(nodename, 0)
 
     if _name_only:
         return nodename
 
-    node = nodes[nodename]
     try:
-        msgs = node.load(setdir)
-    except TypeError:
+        node = store.nodes[nodename]
+    except KeyError:
+        log.critical('Config error: unknown node %s', nodename)
+        sys.exit(1)
+
+    if node.name == 'dataset':
         msgs = node.load(setdir, dataset)
-    except IOError:  # TODO: Dedicated exception
-        return default
+    else:
+        try:
+            msgs = store.load(setdir, node)
+        except IOError:  # TODO: Dedicated exception
+            return default
 
     try:
         value = msgs[lookup]

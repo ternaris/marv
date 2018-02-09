@@ -20,13 +20,12 @@ import cv_bridge
 import matplotlib; matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import mpld3
-from roslib.message import get_message_class
 imgmsg_to_cv2 = cv_bridge.CvBridge().imgmsg_to_cv2
 
 import marv
 from marv_nodes.types_capnp import File
 from marv_detail.types_capnp import Section, Widget
-from marv_robotics.bag import raw_messages
+from marv_robotics.bag import get_message_type, raw_messages
 
 TOPIC = '/wide_stereo/left/image_rect_throttle'
 
@@ -49,7 +48,7 @@ def image(cam):
         return
 
     # Deserialize raw ros message
-    pytype = get_message_class(cam.msg_type)
+    pytype = get_message_type(cam)
     rosmsg = pytype()
     rosmsg.deserialize(msg.data)
 
@@ -107,7 +106,7 @@ def images(cam):
             break
 
         # Deserialize raw ros message
-        pytype = get_message_class(cam.msg_type)
+        pytype = get_message_type(cam)
         rosmsg = pytype()
         rosmsg.deserialize(msg.data)
 

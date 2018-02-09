@@ -323,9 +323,11 @@ class Site(object):
         return setids
 
     def run(self, setid, selected_nodes=None, deps=None, force=None, keep=None,
-            update_detail=None, update_listing=None,
+            force_dependent=None, update_detail=None, update_listing=None,
             excluded_nodes=None, cachesize=None):
-        excluded_nodes = excluded_nodes or []
+        assert not force_dependent or selected_nodes
+
+        excluded_nodes = set(excluded_nodes or [])
         dataset = Dataset.query.filter(Dataset.setid == str(setid))\
                                .options(db.joinedload(Dataset.files))\
                                .one()
@@ -336,13 +338,17 @@ class Site(object):
             selected_nodes.update(collection.detail_deps)
         persistent = collection.nodes
         try:
-            nodes = [persistent[name] if not ':' in name else find_obj(name)
+            nodes = {persistent[name] if not ':' in name else find_obj(name)
                      for name in selected_nodes
                      if name not in excluded_nodes
-                     if name != 'dataset']
+                     if name != 'dataset'}
         except KeyError as e:
             raise UnknownNode(dataset.collection, e.args[0])
-        nodes.sort()
+
+        if force_dependent:
+            nodes.update(x for name in selected_nodes
+                         for x in persistent[name].dependent)
+        nodes = sorted(nodes)
 
         storedir = app.site.config.marv.storedir
         store = Store(storedir, persistent)

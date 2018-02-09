@@ -83,7 +83,7 @@ def detail(setid, path):
                          .filter(File.idx == idx)\
                          .scalar()
         try:
-            return flask.send_file(path, as_attachment=True)
+            return flask.send_file(path, as_attachment=True, conditional=True)
         except ValueError:
             flask.abort(404)
 

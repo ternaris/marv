@@ -43,6 +43,7 @@ class UnmetDependency(Exception):
 
 PPINFO = os.environ.get('PPINFO')
 MARV_RUN_LOGBREAK = os.environ.get('MARV_RUN_LOGBREAK')
+RAISE_IF_UNFINISHED = False
 
 
 def run_nodes(dataset, nodes, store, persistent=None, force=None,
@@ -318,7 +319,7 @@ def run_nodes_async(dataset, nodes, store, queue, persistent=None,
             for waitee in waitees:
                 queue_back(waitee, msg)
             if msg.idx == -1 and stream.parent is not None:
-                assert isinstance(msg.data, Handle)
+                assert isinstance(msg.data, Handle), msg.data
                 msg = stream.parent.handle.msg(msg.data)
                 stream.parent.add_msg(msg)
                 waitees = waiting.pop((msg.handle, msg.idx), [])
@@ -423,11 +424,19 @@ def run_nodes_async(dataset, nodes, store, queue, persistent=None,
     def after_loop():
         if PPINFO:
             logdebug("state %s", ppinfo())
-        assert not any(driver for lst in waiting.values()
-                       for driver in lst
-                       if driver in pulling)
-        assert not any(driver for lst in waiting.values()
-                       for driver in lst
-                       if driver.node in persistent)
+
+        # pulling drivers, i.e. those explicitly run, and drivers for
+        # persistent nodes must finish.
+        unfinished = [(driver.key_abbrev, waitfor) for waitfor, lst in waiting.items()
+                      for driver in lst
+                      if driver in pulling or driver.node in persistent]
+
+        if unfinished:
+            logdebug("state %s", ppinfo())
+            logerror('The following nodes did not finish:\n  %s',
+                     '\n  '.join('{} waiting for {}'.format(*x) for x in
+                                 sorted(unfinished)))
+            if RAISE_IF_UNFINISHED:
+                assert not unfinished, sorted(unfinished)
 
     return streams, loop, process_task, after_loop

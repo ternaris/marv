@@ -1,0 +1,210 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Widgets &#8212; MARV 3.1.0 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/sphinx_paramlinks.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '3.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="HTTP API" href="httpapi.html" />
+    <link rel="prev" title="Nodes" href="nodes.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="widgets">
+<span id="id1"></span><h1>Widgets<a class="headerlink" href="#widgets" title="Permalink to this headline">¶</a></h1>
+<p>The frontend detail view consists of sections displayed as tabs containing widgets. Specific nodes produce the output rendered by the frontend into sections and widgets. See <a class="reference internal" href="tutorial/write-your-own.html#write-your-own"><span class="std std-ref">Tutorial: Write your own nodes</span></a> for an introduction to this.</p>
+<p><a class="reference internal" href="nodes.html#section-nodes"><span class="std std-ref">Section nodes</span></a> are decorated with <code class="docutils literal"><span class="pre">&#64;marv.node(Section)</span></code> and push a dictionary with title and a list of widgets:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">section</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;Section title&#39;</span><span class="p">,</span> <span class="s1">&#39;widgets&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">widget</span><span class="p">,</span> <span class="o">...</span><span class="p">]}</span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="nodes.html#widget-nodes"><span class="std std-ref">Widget nodes</span></a> are decorated with <code class="docutils literal"><span class="pre">&#64;marv.node(Widget)</span></code> and push a dictionary with an optional title and one key corresponding to a <code class="docutils literal"><span class="pre">widget_type</span></code> (e.g. <code class="docutils literal"><span class="pre">image</span></code>) and <code class="docutils literal"><span class="pre">value</span></code> with data extracted from a dataset to be rendered by the widget (e.g. <code class="docutils literal"><span class="pre">{'src':</span> <span class="pre">'img/path'}</span></code>.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">widget</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;Widget title&#39;</span><span class="p">,</span> <span class="n">widget_type</span><span class="p">:</span> <span class="n">data</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>Widgets are either rendered directly into a section or are used as part of another composite widget, e.g. an <code class="docutils literal"><span class="pre">image</span></code> in a <code class="docutils literal"><span class="pre">gallery</span></code> (see below).</p>
+<p>Valid values for <code class="docutils literal"><span class="pre">widget_type</span></code> are given in the following sections. The <code class="docutils literal"><span class="pre">title</span></code> key is optional and omitted for brevity.</p>
+<div class="section" id="image">
+<span id="widget-image"></span><h2>Image<a class="headerlink" href="#image" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">image</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;image&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;src&#39;</span><span class="p">:</span> <span class="n">img</span><span class="o">.</span><span class="n">relpath</span><span class="p">}}</span>
+</pre></div>
+</div>
+<p>Example: Image used inside gallery <a class="reference internal" href="nodes.html#marv_robotics.detail.galleries" title="marv_robotics.detail.galleries"><code class="xref py py-func docutils literal"><span class="pre">marv_robotics.detail.galleries()</span></code></a></p>
+</div>
+<div class="section" id="gallery">
+<span id="widget-gallery"></span><h2>Gallery<a class="headerlink" href="#gallery" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">gallery</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;gallery&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;images&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">image</span><span class="p">,</span> <span class="o">...</span><span class="p">]}}</span>
+</pre></div>
+</div>
+<p>Example: <a class="reference internal" href="nodes.html#marv_robotics.detail.galleries" title="marv_robotics.detail.galleries"><code class="xref py py-func docutils literal"><span class="pre">marv_robotics.detail.galleries()</span></code></a></p>
+</div>
+<div class="section" id="video">
+<span id="widget-video"></span><h2>Video<a class="headerlink" href="#video" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">video</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;video&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;src&#39;</span><span class="p">:</span> <span class="n">videofile</span><span class="o">.</span><span class="n">relpath</span><span class="p">}}</span>
+</pre></div>
+</div>
+<p>Example: <a class="reference internal" href="nodes.html#marv_robotics.detail.video_section" title="marv_robotics.detail.video_section"><code class="xref py py-func docutils literal"><span class="pre">marv_robotics.detail.video_section()</span></code></a></p>
+</div>
+<div class="section" id="trajectory">
+<span id="widget-trajectory"></span><h2>Trajectory<a class="headerlink" href="#trajectory" title="Permalink to this headline">¶</a></h2>
+<p>Example: <a class="reference internal" href="nodes.html#marv_robotics.detail.trajectory_section" title="marv_robotics.detail.trajectory_section"><code class="xref py py-func docutils literal"><span class="pre">marv_robotics.detail.trajectory_section()</span></code></a></p>
+</div>
+<div class="section" id="table">
+<span id="widget-table"></span><h2>Table<a class="headerlink" href="#table" title="Permalink to this headline">¶</a></h2>
+<p>Example: <a class="reference internal" href="nodes.html#marv_robotics.detail.bagmeta_table" title="marv_robotics.detail.bagmeta_table"><code class="xref py py-func docutils literal"><span class="pre">marv_robotics.detail.bagmeta_table()</span></code></a></p>
+</div>
+<div class="section" id="key-value">
+<span id="widget-keyval"></span><h2>Key/value<a class="headerlink" href="#key-value" title="Permalink to this headline">¶</a></h2>
+<p>Example: <a class="reference internal" href="nodes.html#marv_robotics.detail.summary_keyval" title="marv_robotics.detail.summary_keyval"><code class="xref py py-func docutils literal"><span class="pre">marv_robotics.detail.summary_keyval()</span></code></a></p>
+</div>
+<div class="section" id="preformatted">
+<span id="widget-pre"></span><h2>Preformatted<a class="headerlink" href="#preformatted" title="Permalink to this headline">¶</a></h2>
+<p>Wraps data into an html <code class="docutils literal"><span class="pre">&lt;pre&gt;&lt;/pre&gt;</span></code> tag.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">pre</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;pre&#39;</span><span class="p">:</span> <span class="s1">&#39;foo</span><span class="se">\n</span><span class="s1">bar&#39;</span><span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="custom">
+<span id="widget-custom"></span><h2>Custom<a class="headerlink" href="#custom" title="Permalink to this headline">¶</a></h2>
+<p>Renders custom widgets.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">custom</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;custom&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;foo&#39;</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">)}}</span>
+</pre></div>
+</div>
+<p>Create <code class="docutils literal"><span class="pre">site/frontend/custom.js</span></code> and restart your instance to customize widgets and formatters.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">window</span><span class="o">.</span><span class="n">marv_extensions</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">formats</span><span class="p">:</span> <span class="p">{</span>
+        <span class="o">//</span> <span class="n">replace</span> <span class="n">default</span> <span class="n">datetime</span> <span class="n">formatter</span><span class="p">,</span> <span class="n">show</span> <span class="n">times</span> <span class="ow">in</span> <span class="n">UTC</span>
+        <span class="s1">&#39;datetime&#39;</span><span class="p">:</span> <span class="n">function</span><span class="p">(</span><span class="n">date</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span> <span class="n">new</span> <span class="n">Date</span><span class="p">(</span><span class="n">date</span><span class="p">)</span><span class="o">.</span><span class="n">toUTCString</span><span class="p">();</span> <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="n">widgets</span><span class="p">:</span> <span class="p">{</span>
+        <span class="o">//</span> <span class="n">rowcount</span> <span class="n">widget</span> <span class="n">displays</span> <span class="n">the</span> <span class="n">number</span> <span class="n">of</span> <span class="n">rows</span> <span class="ow">in</span> <span class="n">a</span> <span class="n">table</span>
+        <span class="s1">&#39;rowcount&#39;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="o">/*</span> <span class="n">insert</span> <span class="n">callback</span><span class="p">,</span> <span class="n">renders</span> <span class="n">the</span> <span class="n">data</span>
+
+               <span class="nd">@function</span> <span class="n">insert</span>
+               <span class="nd">@param</span> <span class="p">{</span><span class="n">HTMLElement</span><span class="p">}</span> <span class="n">element</span> <span class="n">The</span> <span class="n">parent</span> <span class="n">element</span>
+               <span class="nd">@param</span> <span class="p">{</span><span class="n">Object</span><span class="p">}</span> <span class="n">data</span> <span class="n">The</span> <span class="n">data</span> <span class="n">to</span> <span class="n">be</span> <span class="n">rendered</span>
+               <span class="nd">@return</span> <span class="p">{</span><span class="n">Object</span><span class="p">}</span> <span class="n">state</span> <span class="n">Any</span> <span class="n">variable</span><span class="p">,</span> <span class="k">if</span> <span class="n">required</span> <span class="n">by</span> <span class="n">remove</span>
+            <span class="o">*/</span>
+            <span class="n">function</span> <span class="n">insert</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span> <span class="p">{</span>
+                <span class="n">const</span> <span class="n">doc</span> <span class="o">=</span> <span class="n">element</span><span class="o">.</span><span class="n">ownerDocument</span><span class="p">;</span>
+                <span class="n">const</span> <span class="n">el</span> <span class="o">=</span> <span class="n">doc</span><span class="o">.</span><span class="n">createTextNode</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">rows</span><span class="o">.</span><span class="n">length</span> <span class="o">+</span> <span class="s1">&#39; rows&#39;</span><span class="p">);</span>
+                <span class="n">element</span><span class="o">.</span><span class="n">appendChild</span><span class="p">(</span><span class="n">el</span><span class="p">);</span>
+
+                <span class="n">const</span> <span class="n">state</span> <span class="o">=</span> <span class="p">{</span> <span class="n">el</span> <span class="p">};</span>
+                <span class="k">return</span> <span class="n">state</span><span class="p">;</span>
+            <span class="p">},</span>
+
+            <span class="o">/*</span> <span class="n">remove</span> <span class="n">callback</span><span class="p">,</span> <span class="n">clean</span> <span class="n">up</span> <span class="k">if</span> <span class="n">necessary</span>
+
+               <span class="nd">@function</span> <span class="n">remove</span>
+               <span class="nd">@param</span> <span class="p">{</span><span class="n">Object</span><span class="p">}</span> <span class="n">state</span> <span class="n">The</span> <span class="n">state</span> <span class="nb">object</span> <span class="n">returned</span> <span class="n">by</span> <span class="n">insert</span>
+            <span class="o">*/</span>
+            <span class="n">function</span> <span class="n">remove</span><span class="p">(</span><span class="n">state</span><span class="p">)</span> <span class="p">{</span>
+                <span class="n">state</span><span class="o">.</span><span class="n">el</span><span class="o">.</span><span class="n">remove</span><span class="p">();</span>
+            <span class="p">}</span>
+        <span class="p">]</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Widgets</a><ul>
+<li><a class="reference internal" href="#image">Image</a></li>
+<li><a class="reference internal" href="#gallery">Gallery</a></li>
+<li><a class="reference internal" href="#video">Video</a></li>
+<li><a class="reference internal" href="#trajectory">Trajectory</a></li>
+<li><a class="reference internal" href="#table">Table</a></li>
+<li><a class="reference internal" href="#key-value">Key/value</a></li>
+<li><a class="reference internal" href="#preformatted">Preformatted</a></li>
+<li><a class="reference internal" href="#custom">Custom</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="nodes.html" title="previous chapter">Nodes</a></li>
+      <li>Next: <a href="httpapi.html" title="next chapter">HTTP API</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/widgets.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016-2018, Ternaris.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/widgets.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

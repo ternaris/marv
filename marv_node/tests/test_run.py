@@ -106,12 +106,12 @@ class TestCase(unittest.TestCase):
     def test_substream_subscription(self):
         @marv.node(group='ondemand')
         def source():
-            out = yield marv.create_stream('a')
+            out = yield marv.create_stream('foo')
             yield out.msg(1)
 
         msgs = []
         @marv.node()
-        @marv.input('handle', default=source['a'])
+        @marv.input('handle', default=marv.select(source, 'foo'))
         def consumer(handle):
             msg = yield marv.pull(handle)
             msgs.append(msg)

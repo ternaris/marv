@@ -5,6 +5,33 @@ Migration
 
 Before doing any migration you might want to check the :ref:`config` and :ref:`deploy` sections.
 
+
+17.11 -> 18.02
+--------------
+
+With this release:
+
+- message definitions are read from bag files instead of being expected on the system
+- marv allows mixing message types per topic.
+
+As part of this the topics section has been renamed to ``connections_section`` and the ``bagmeta`` node has changed a bit. Please update your configuration along the lines of:
+
+.. literalinclude:: 1711-1802-marv.conf.diff
+   :language: diff
+
+And then rerun the bagmeta node and the new connections section.
+
+.. code-block:: console
+
+   marv run --node bagmeta --node connections_section --force --collection=*
+
+Now, nodes can be run, that were previously missing message type definitions. ``gnss_plots`` for example works differently, if it cannot find navsat orientations. To rerun it and all nodes depending on it:
+
+.. code-block:: console
+
+   marv run --node gnss_plots --force --force-dependant --collection=*
+
+
 16.10 -> 17.11
 --------------
 

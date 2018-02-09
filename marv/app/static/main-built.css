@@ -1,6 +1,6 @@
 /*!
  * MARV
- * Copyright (C) 2016-2017  Ternaris, Munich, Germany
+ * Copyright (C) 2016-2018  Ternaris, Munich, Germany
  *
  * This file is part of MARV
  *
@@ -9476,4 +9476,9 @@ input[type=range]:focus::-ms-fill-upper {
     -webkit-transform: rotateX(35deg) rotateY(55deg) rotateZ(360deg);
     transform: rotateX(35deg) rotateY(55deg) rotateZ(360deg);
   }
+}
+
+.btn-group select {
+  float: left;
+  width: initial;
 }

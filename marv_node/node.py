@@ -181,10 +181,19 @@ class Node(Keyed):
         # TODO: StreamSpec, seriously?
         self.deps = {x.value.node for x in self.specs.values()
                      if isinstance(x.value, StreamSpec)}
+        self.alldeps = self.deps.copy()
+        self.alldeps.update(x for dep in self.deps
+                            for x in dep.alldeps)
+
         self.consumers = set()
         for dep in self.deps:
-            assert self not in dep.consumers, (dep.consumers, self)
-            self.consumers.add(self)
+            assert self not in dep.consumers, (dep, self)
+            dep.consumers.add(self)
+
+        self.dependent = set()
+        for dep in self.alldeps:
+            assert self not in dep.dependent, (dep, self)
+            dep.dependent.add(self)
 
     def __call__(self, **inputs):
         return self.func(**inputs)
@@ -257,27 +266,14 @@ class Node(Keyed):
         return clone
 
     def __getitem__(self, key):
-        """For groups this is used to declare subscription to group member by name
-        @marv.input('msgs', foreach=messages['name']
-        """
-        return StreamSpec(self, key)
+        from .tools import select
+        import warnings
+        warnings.warn('Use ``marv.select(node, name)`` instead of ``node[name]``',
+                      DeprecationWarning, stacklevel=2)
+        return select(self, key)
 
     def __str__(self):
         return self.key
 
     def __repr__(self):
         return '<Node {}>'.format(self.abbrev)
-
-    def load(self, setdir, default=()):
-        # TODO: this is store, not node!
-        from marv_pycapnp import Wrapper
-        # TODO: handle substream fun
-        nodedir = os.path.join(setdir, self.name)
-        try:
-            with open(os.path.join(nodedir, 'default-stream')) as f:
-                msgs = self.schema.read_multiple_packed(f)
-                return [Wrapper(x, None, setdir) for x in msgs]
-        except IOError:
-            if default is not ():
-                return default
-            raise

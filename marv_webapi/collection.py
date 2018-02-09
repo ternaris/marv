@@ -42,7 +42,10 @@ ALIGN = {
 
 
 FILTER_PARSER = {
-    'datetime': parse_datetime,
+    'datetime': lambda x: int(
+        (parse_datetime(x) - parse_datetime('1970-01-01T00:00:00+00:00'))
+        .total_seconds() * 1000
+    ),
     'filesize': parse_filesize,
     'float': float,
     'int': int,
@@ -154,7 +157,9 @@ def collection(collection_id):
                for x in fspecs.values()]
 
     rows = db.session.execute(stmt).fetchall()
-    rowdata = ',\n'.join([x.replace('["#TAGS#"]', tags if tags != '[null]' else '[]', 2)
+    rowdata = ',\n'.join([x.replace('["#TAGS#"]', tags if tags != '[null]' else '[]')
+                          .replace('"#TAGS#"', tags[1:-1] if tags != '[null]' else '')
+                          .replace('[,', '[')
                           .replace('"#STATUS#"', STATUS_STRS[status])
                           for x, status, tags in rows])
     dct = {
@@ -162,8 +167,6 @@ def collection(collection_id):
         'compare': bool(collection.compare),
         'filters': {'title': 'Filter',
                     'widget': {'type': 'filter', 'filters': filters}},
-        # TODO: summary non-functional, remove once frontend is switched
-        'summary': {'title': 'Summary', 'widget': {'data': {'items': [x.__setitem__('value', 0) or x for x in collection.summary_items]}, 'type': 'keyval'}},
         'summary_config': {'title': 'Summary', 'items': collection.summary_items},
         'listing': {'title': 'Data sets ({} found)'.format(len(rows)),
                     'widget': {

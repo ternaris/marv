@@ -35,7 +35,7 @@ FORMATTER_MAP = {
     'pill[]': lambda x: x,
     'rellink': lambda x: x,
     'route': lambda x: x,
-    'string': lambda x: None if x is None else unicode(x),
+    'string': lambda x: x,
     'timedelta': lambda ns: None if ns is None else int(ns / 10**6),
 }
 

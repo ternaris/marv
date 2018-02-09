@@ -1,0 +1,412 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>marv_robotics.bag &#8212; MARV 3.1.0 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/sphinx_paramlinks.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '3.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for marv_robotics.bag</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1">#</span>
+<span class="c1"># This file is part of MARV Robotics</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright 2016-2018 Ternaris</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span>
+
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">defaultdict</span><span class="p">,</span> <span class="n">namedtuple</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="k">import</span> <span class="n">groupby</span>
+<span class="kn">from</span> <span class="nn">logging</span> <span class="k">import</span> <span class="n">getLogger</span>
+
+<span class="kn">import</span> <span class="nn">capnp</span>
+<span class="kn">import</span> <span class="nn">genpy</span>
+<span class="kn">import</span> <span class="nn">rosbag</span>
+<span class="kn">from</span> <span class="nn">rosbag.bag</span> <span class="k">import</span> <span class="n">_get_message_type</span>
+
+<span class="kn">import</span> <span class="nn">marv</span>
+<span class="kn">import</span> <span class="nn">marv_nodes</span>
+<span class="kn">from</span> <span class="nn">marv.scanner</span> <span class="k">import</span> <span class="n">DatasetInfo</span>
+<span class="kn">from</span> <span class="nn">.bag_capnp</span> <span class="k">import</span> <span class="n">Bagmeta</span><span class="p">,</span> <span class="n">Header</span><span class="p">,</span> <span class="n">Message</span>
+
+
+<span class="c1"># Regular expression used to aggregate individual bags into sets (see</span>
+<span class="c1"># below). Bags with the same *name* and consecutive *idx* starting</span>
+<span class="c1"># with 0 are put into sets. If one bag is missing all remaining bags</span>
+<span class="c1"># will result in sets with one bag each.</span>
+<span class="n">REGEX</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">^</span>
+<span class="s2">(?P&lt;basename&gt;</span>
+<span class="s2">  (?P&lt;name&gt;</span>
+<span class="s2">    .+?</span>
+<span class="s2">  )</span>
+<span class="s2">  (?:</span>
+<span class="s2">    _(?P&lt;timestamp&gt;</span>
+<span class="s2">      \d</span><span class="si">{4}</span><span class="s2">(?:-\d</span><span class="si">{2}</span><span class="s2">)</span><span class="si">{5}</span><span class="s2"></span>
+<span class="s2">    )</span>
+<span class="s2">  )?</span>
+<span class="s2">  (?:</span>
+<span class="s2">    _(?P&lt;idx&gt;</span>
+<span class="s2">      \d+</span>
+<span class="s2">    )</span>
+<span class="s2">  )?</span>
+<span class="s2">)</span>
+<span class="s2">.bag$</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">VERBOSE</span><span class="p">)</span>
+
+
+<span class="n">_Baginfo</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;Baginfo&#39;</span><span class="p">,</span> <span class="s1">&#39;filename basename name timestamp idx&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">Baginfo</span><span class="p">(</span><span class="n">_Baginfo</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">basename</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">timestamp</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">idx</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">idx</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">Baginfo</span><span class="p">,</span> <span class="bp">cls</span><span class="p">)</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">basename</span><span class="p">,</span>
+                                           <span class="n">name</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">,</span> <span class="n">idx</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="scan"><a class="viewcode-back" href="../../scan.html#marv_robotics.bag.scan">[docs]</a><span class="k">def</span> <span class="nf">scan</span><span class="p">(</span><span class="n">dirpath</span><span class="p">,</span> <span class="n">dirnames</span><span class="p">,</span> <span class="n">filenames</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Default scanner for ROS bag files</span>
+
+<span class="sd">    Bags suffixed with a consecutive index are grouped into sets::</span>
+
+<span class="sd">        foo_0.bag</span>
+<span class="sd">        foo_1.bag</span>
+<span class="sd">        foo_3.bag</span>
+<span class="sd">        foo_4.bag</span>
+
+<span class="sd">    results in::</span>
+
+<span class="sd">        foo   [foo_0.bag, foo_1.bag]</span>
+<span class="sd">        foo_3 [foo_3.bag]</span>
+<span class="sd">        foo_4 [foo_4.bag]</span>
+
+<span class="sd">    In this example the bag with index 2 is missing which results in</span>
+<span class="sd">    foo_3 and foo_4 to be individual sets with one bag each.</span>
+
+<span class="sd">    The timestamps used by ``rosbag record`` are stripped from the</span>
+<span class="sd">    name given to sets, but are kept for the remaining individual sets</span>
+<span class="sd">    in case a bag is missing::</span>
+
+<span class="sd">        foo_2018-01-12-14-05-12_0.bag</span>
+<span class="sd">        foo_2018-01-12-14-45-23_1.bag</span>
+<span class="sd">        foo_2018-01-12-14-55-42_3.bag</span>
+
+<span class="sd">    results in::</span>
+
+<span class="sd">        foo [foo_2018-01-12-14-05-12_0.bag,</span>
+<span class="sd">             foo_2018-01-12-14-45-23_1.bag]</span>
+<span class="sd">        foo_2018-01-12-14-45-23_1 [foo_2018-01-12-14-45-23_1.bag]</span>
+<span class="sd">        foo_2018-01-12-14-55-42_3 [foo_2018-01-12-14-55-42_3.bag]</span>
+
+<span class="sd">    For more information on scanners see :any:`marv.scanner`.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        dirpath (str): The path to the directory currently being</span>
+<span class="sd">            scanned.</span>
+<span class="sd">        dirnames (str): Sorted list of subdirectories of the directory</span>
+<span class="sd">            currently being scanned.  Change this in-place to control</span>
+<span class="sd">            further traversal.</span>
+<span class="sd">        filenames (str): Sorted list of files within the directory</span>
+<span class="sd">            currently being scanned.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A list of :class:`marv.scanner.DatasetInfo` instances mapping</span>
+<span class="sd">        set of files to dataset names.  Absolute filenames must</span>
+<span class="sd">        start with :paramref:`.dirpath`, relative filenames are</span>
+<span class="sd">        automatically prefixed with it.</span>
+
+<span class="sd">    See :ref:`cfg_c_scanner` config key.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">groups</span> <span class="o">=</span> <span class="n">groupby</span><span class="p">([</span><span class="n">Baginfo</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="o">**</span><span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">REGEX</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">groupdict</span><span class="p">())</span>
+                      <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">filenames</span><span class="p">)</span>
+                      <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.bag&#39;</span><span class="p">)],</span>
+                     <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+    <span class="n">bags</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">datasets</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">groups</span><span class="p">:</span>
+        <span class="n">group</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
+        <span class="n">prev_idx</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">bag</span> <span class="ow">in</span> <span class="n">group</span><span class="p">:</span>
+            <span class="n">expected_idx</span> <span class="o">=</span> <span class="n">bag</span><span class="o">.</span><span class="n">idx</span> <span class="k">if</span> <span class="n">prev_idx</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">prev_idx</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">bag</span><span class="o">.</span><span class="n">idx</span> <span class="o">!=</span> <span class="n">expected_idx</span> <span class="ow">or</span> \
+               <span class="n">bags</span> <span class="ow">and</span> <span class="p">(</span><span class="n">bags</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">timestamp</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="o">!=</span> <span class="p">(</span><span class="n">bag</span><span class="o">.</span><span class="n">timestamp</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="n">datasets</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">DatasetInfo</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">basename</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">filename</span><span class="p">])</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">bags</span><span class="p">]</span>
+                <span class="n">bags</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">bags</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">bag</span><span class="p">)</span>
+            <span class="n">prev_idx</span> <span class="o">=</span> <span class="n">bag</span><span class="o">.</span><span class="n">idx</span>
+            <span class="k">if</span> <span class="n">bag</span><span class="o">.</span><span class="n">idx</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">datasets</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">DatasetInfo</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">filename</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">bags</span><span class="p">]))</span>
+                <span class="n">bags</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">elif</span> <span class="n">bag</span><span class="o">.</span><span class="n">idx</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">bags</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="n">bags</span>
+                <span class="n">datasets</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">DatasetInfo</span><span class="p">(</span><span class="n">bag</span><span class="o">.</span><span class="n">basename</span><span class="p">,</span> <span class="p">[</span><span class="n">bag</span><span class="o">.</span><span class="n">filename</span><span class="p">]))</span>
+                <span class="n">bags</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">datasets</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">DatasetInfo</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">basename</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">filename</span><span class="p">])</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">bags</span><span class="p">]</span>
+        <span class="n">bags</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">return</span> <span class="n">datasets</span></div>
+
+
+<div class="viewcode-block" id="bagmeta"><a class="viewcode-back" href="../../nodes.html#marv_robotics.bag.bagmeta">[docs]</a><span class="nd">@marv</span><span class="o">.</span><span class="n">node</span><span class="p">(</span><span class="n">Bagmeta</span><span class="p">)</span>
+<span class="nd">@marv</span><span class="o">.</span><span class="n">input</span><span class="p">(</span><span class="s1">&#39;dataset&#39;</span><span class="p">,</span> <span class="n">marv_nodes</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">bagmeta</span><span class="p">(</span><span class="n">dataset</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Extract meta information from bag file.</span>
+
+<span class="sd">    In case of multiple connections for one topic, they are assumed to</span>
+<span class="sd">    be all of the same message type and either all be latching or none.</span>
+
+<span class="sd">    A topic&#39;s message type and latching mode, and a message type&#39;s</span>
+<span class="sd">    md5sum are assumed not to change across split bags.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dataset</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">pull</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+    <span class="n">paths</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">path</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">dataset</span><span class="o">.</span><span class="n">files</span> <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.bag&#39;</span><span class="p">)]</span>
+
+    <span class="n">bags</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">start_time</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">maxint</span>
+    <span class="n">end_time</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">connections</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">paths</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">rosbag</span><span class="o">.</span><span class="n">Bag</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">as</span> <span class="n">bag</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">_start_time</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">bag</span><span class="o">.</span><span class="n">get_start_time</span><span class="p">()</span> <span class="o">*</span> <span class="mf">1.e9</span><span class="p">)</span>
+                <span class="n">_end_time</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">bag</span><span class="o">.</span><span class="n">get_end_time</span><span class="p">()</span> <span class="o">*</span> <span class="mf">1.e9</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">rosbag</span><span class="o">.</span><span class="n">ROSBagException</span><span class="p">:</span>
+                <span class="n">_start_time</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">maxint</span>
+                <span class="n">_end_time</span> <span class="o">=</span> <span class="mi">0</span>
+
+            <span class="n">start_time</span> <span class="o">=</span> <span class="n">_start_time</span> <span class="k">if</span> <span class="n">_start_time</span> <span class="o">&lt;</span> <span class="n">start_time</span> <span class="k">else</span> <span class="n">start_time</span>
+            <span class="n">end_time</span> <span class="o">=</span> <span class="n">_end_time</span> <span class="k">if</span> <span class="n">_end_time</span> <span class="o">&gt;</span> <span class="n">end_time</span> <span class="k">else</span> <span class="n">end_time</span>
+
+            <span class="n">_msg_counts</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">bag</span><span class="o">.</span><span class="n">_chunks</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">conid</span><span class="p">,</span> <span class="n">count</span> <span class="ow">in</span> <span class="n">chunk</span><span class="o">.</span><span class="n">connection_counts</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+                    <span class="n">_msg_counts</span><span class="p">[</span><span class="n">conid</span><span class="p">]</span> <span class="o">+=</span> <span class="n">count</span>
+
+            <span class="n">_connections</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="p">{</span><span class="s1">&#39;topic&#39;</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">topic</span><span class="p">,</span>
+                 <span class="s1">&#39;datatype&#39;</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">datatype</span><span class="p">,</span>
+                 <span class="s1">&#39;md5sum&#39;</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">md5sum</span><span class="p">,</span>
+                 <span class="s1">&#39;msg_def&#39;</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">msg_def</span><span class="p">,</span>
+                 <span class="s1">&#39;msg_count&#39;</span><span class="p">:</span> <span class="n">_msg_counts</span><span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">id</span><span class="p">],</span>
+                 <span class="s1">&#39;latching&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;0&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}[</span><span class="n">x</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;latching&#39;</span><span class="p">,</span> <span class="s1">&#39;0&#39;</span><span class="p">)]}</span>
+                <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">bag</span><span class="o">.</span><span class="n">_connections</span><span class="o">.</span><span class="n">itervalues</span><span class="p">()</span>
+            <span class="p">]</span>
+
+            <span class="n">_start_time</span> <span class="o">=</span> <span class="n">_start_time</span> <span class="k">if</span> <span class="n">_start_time</span> <span class="o">!=</span> <span class="n">sys</span><span class="o">.</span><span class="n">maxint</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="n">bags</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s1">&#39;start_time&#39;</span><span class="p">:</span> <span class="n">_start_time</span><span class="p">,</span>
+                <span class="s1">&#39;end_time&#39;</span><span class="p">:</span> <span class="n">_end_time</span><span class="p">,</span>
+                <span class="s1">&#39;duration&#39;</span><span class="p">:</span> <span class="n">_end_time</span> <span class="o">-</span> <span class="n">_start_time</span><span class="p">,</span>
+                <span class="s1">&#39;msg_count&#39;</span><span class="p">:</span> <span class="nb">sum</span><span class="p">(</span><span class="n">_msg_counts</span><span class="o">.</span><span class="n">itervalues</span><span class="p">()),</span>
+                <span class="s1">&#39;connections&#39;</span><span class="p">:</span> <span class="n">_connections</span><span class="p">,</span>
+                <span class="s1">&#39;version&#39;</span><span class="p">:</span> <span class="n">bag</span><span class="o">.</span><span class="n">version</span><span class="p">,</span>
+            <span class="p">})</span>
+
+            <span class="k">for</span> <span class="n">_con</span> <span class="ow">in</span> <span class="n">_connections</span><span class="p">:</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">_con</span><span class="p">[</span><span class="s1">&#39;topic&#39;</span><span class="p">],</span> <span class="n">_con</span><span class="p">[</span><span class="s1">&#39;datatype&#39;</span><span class="p">],</span> <span class="n">_con</span><span class="p">[</span><span class="s1">&#39;md5sum&#39;</span><span class="p">])</span>
+                <span class="n">con</span> <span class="o">=</span> <span class="n">connections</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">con</span><span class="p">:</span>
+                    <span class="n">con</span><span class="p">[</span><span class="s1">&#39;msg_count&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">_con</span><span class="p">[</span><span class="s1">&#39;msg_count&#39;</span><span class="p">]</span>
+                    <span class="n">con</span><span class="p">[</span><span class="s1">&#39;latching&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">con</span><span class="p">[</span><span class="s1">&#39;latching&#39;</span><span class="p">]</span> <span class="ow">or</span> <span class="n">_con</span><span class="p">[</span><span class="s1">&#39;latching&#39;</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">connections</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">_con</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="n">connections</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">connections</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span>
+                         <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;topic&#39;</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;datatype&#39;</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;md5sum&#39;</span><span class="p">]))</span>
+    <span class="n">start_time</span> <span class="o">=</span> <span class="n">start_time</span> <span class="k">if</span> <span class="n">start_time</span> <span class="o">!=</span> <span class="n">sys</span><span class="o">.</span><span class="n">maxint</span> <span class="k">else</span> <span class="mi">0</span>
+    <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">push</span><span class="p">({</span>
+        <span class="s1">&#39;start_time&#39;</span><span class="p">:</span> <span class="n">start_time</span><span class="p">,</span>
+        <span class="s1">&#39;end_time&#39;</span><span class="p">:</span> <span class="n">end_time</span><span class="p">,</span>
+        <span class="s1">&#39;duration&#39;</span><span class="p">:</span> <span class="n">end_time</span> <span class="o">-</span> <span class="n">start_time</span><span class="p">,</span>
+        <span class="s1">&#39;msg_count&#39;</span><span class="p">:</span> <span class="nb">sum</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;msg_count&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">bags</span><span class="p">),</span>
+        <span class="s1">&#39;msg_types&#39;</span><span class="p">:</span> <span class="nb">sorted</span><span class="p">({</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;datatype&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">connections</span><span class="p">}),</span>
+        <span class="s1">&#39;topics&#39;</span><span class="p">:</span> <span class="nb">sorted</span><span class="p">({</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;topic&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">connections</span><span class="p">}),</span>
+        <span class="s1">&#39;connections&#39;</span><span class="p">:</span> <span class="n">connections</span><span class="p">,</span>
+        <span class="s1">&#39;bags&#39;</span><span class="p">:</span> <span class="n">bags</span><span class="p">,</span>
+    <span class="p">})</span></div>
+
+
+<span class="k">def</span> <span class="nf">read_messages</span><span class="p">(</span><span class="n">paths</span><span class="p">,</span> <span class="n">topics</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">start_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_time</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Iterate chronologically raw BagMessage for topic from paths.&quot;&quot;&quot;</span>
+    <span class="n">bags</span> <span class="o">=</span> <span class="p">{</span><span class="n">path</span><span class="p">:</span> <span class="n">rosbag</span><span class="o">.</span><span class="n">Bag</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">paths</span><span class="p">}</span>
+    <span class="n">gens</span> <span class="o">=</span> <span class="p">{</span><span class="n">path</span><span class="p">:</span> <span class="n">bag</span><span class="o">.</span><span class="n">read_messages</span><span class="p">(</span><span class="n">topics</span><span class="o">=</span><span class="n">topics</span><span class="p">,</span> <span class="n">start_time</span><span class="o">=</span><span class="n">start_time</span><span class="p">,</span>
+                                    <span class="n">end_time</span><span class="o">=</span><span class="n">end_time</span><span class="p">,</span> <span class="n">raw</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">path</span><span class="p">,</span> <span class="n">bag</span> <span class="ow">in</span> <span class="n">bags</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+    <span class="n">msgs</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">prev_timestamp</span> <span class="o">=</span> <span class="n">genpy</span><span class="o">.</span><span class="n">Time</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="n">gens</span><span class="o">.</span><span class="n">viewkeys</span><span class="p">()</span> <span class="o">-</span> <span class="n">msgs</span><span class="o">.</span><span class="n">viewkeys</span><span class="p">()):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">msgs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">gens</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+                <span class="n">bags</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                <span class="k">del</span> <span class="n">bags</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                <span class="k">del</span> <span class="n">gens</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">msgs</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="n">next_key</span> <span class="o">=</span> <span class="n">reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">x</span> <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">timestamp</span> <span class="o">&lt;</span> <span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">timestamp</span> <span class="k">else</span> <span class="n">y</span><span class="p">,</span>
+                          <span class="n">msgs</span><span class="o">.</span><span class="n">items</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">next_msg</span> <span class="o">=</span> <span class="n">msgs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">next_key</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">next_msg</span><span class="o">.</span><span class="n">timestamp</span> <span class="o">&gt;=</span> <span class="n">prev_timestamp</span>
+        <span class="k">yield</span> <span class="n">next_msg</span>
+        <span class="n">prev_timestamp</span> <span class="o">=</span> <span class="n">next_msg</span><span class="o">.</span><span class="n">timestamp</span>
+
+
+<div class="viewcode-block" id="raw_messages"><a class="viewcode-back" href="../../nodes.html#marv_robotics.bag.raw_messages">[docs]</a><span class="nd">@marv</span><span class="o">.</span><span class="n">node</span><span class="p">(</span><span class="n">Message</span><span class="p">,</span> <span class="n">Header</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="s1">&#39;ondemand&#39;</span><span class="p">)</span>
+<span class="nd">@marv</span><span class="o">.</span><span class="n">input</span><span class="p">(</span><span class="s1">&#39;dataset&#39;</span><span class="p">,</span> <span class="n">marv_nodes</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
+<span class="nd">@marv</span><span class="o">.</span><span class="n">input</span><span class="p">(</span><span class="s1">&#39;bagmeta&#39;</span><span class="p">,</span> <span class="n">bagmeta</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">raw_messages</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">bagmeta</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Stream messages from a set of bag files.&quot;&quot;&quot;</span>
+    <span class="n">bagmeta</span><span class="p">,</span> <span class="n">dataset</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">pull_all</span><span class="p">(</span><span class="n">bagmeta</span><span class="p">,</span> <span class="n">dataset</span><span class="p">)</span>
+    <span class="n">bagtopics</span> <span class="o">=</span> <span class="n">bagmeta</span><span class="o">.</span><span class="n">topics</span>
+    <span class="n">connections</span> <span class="o">=</span> <span class="n">bagmeta</span><span class="o">.</span><span class="n">connections</span>
+    <span class="n">paths</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">path</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">dataset</span><span class="o">.</span><span class="n">files</span> <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.bag&#39;</span><span class="p">)]</span>
+    <span class="n">requested</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">get_requested</span><span class="p">()</span>
+    <span class="n">log</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">get_logger</span><span class="p">()</span>
+
+    <span class="n">alltopics</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="n">bytopic</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+    <span class="n">groups</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">requested</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="s1">&#39;:&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+            <span class="n">reqtop</span><span class="p">,</span> <span class="n">reqtype</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span>
+            <span class="c1"># BUG: topic with more than one type is not supported</span>
+            <span class="n">topics</span> <span class="o">=</span> <span class="p">[</span><span class="n">con</span><span class="o">.</span><span class="n">topic</span> <span class="k">for</span> <span class="n">con</span> <span class="ow">in</span> <span class="n">connections</span>
+                      <span class="k">if</span> <span class="p">((</span><span class="n">reqtop</span> <span class="o">==</span> <span class="s1">&#39;*&#39;</span> <span class="ow">or</span> <span class="n">reqtop</span> <span class="o">==</span> <span class="n">con</span><span class="o">.</span><span class="n">topic</span><span class="p">)</span> <span class="ow">and</span>
+                          <span class="p">(</span><span class="n">reqtype</span> <span class="o">==</span> <span class="s1">&#39;*&#39;</span> <span class="ow">or</span> <span class="n">reqtype</span> <span class="o">==</span> <span class="n">con</span><span class="o">.</span><span class="n">datatype</span><span class="p">))]</span>
+            <span class="n">group</span> <span class="o">=</span> <span class="n">groups</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">create_group</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">create_stream</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">create_stream</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">topics</span> <span class="o">=</span> <span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">bagtopics</span> <span class="k">else</span> <span class="p">[]</span>
+            <span class="n">group</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">create_stream</span> <span class="o">=</span> <span class="n">marv</span><span class="o">.</span><span class="n">create_stream</span>
+
+        <span class="k">for</span> <span class="n">topic</span> <span class="ow">in</span> <span class="n">topics</span><span class="p">:</span>
+            <span class="c1"># BUG: topic with more than one type is not supported</span>
+            <span class="n">con</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">connections</span> <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">topic</span> <span class="o">==</span> <span class="n">topic</span><span class="p">)</span>
+            <span class="c1"># TODO: start/end_time per topic?</span>
+            <span class="n">header</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;start_time&#39;</span><span class="p">:</span> <span class="n">bagmeta</span><span class="o">.</span><span class="n">start_time</span><span class="p">,</span>
+                      <span class="s1">&#39;end_time&#39;</span><span class="p">:</span> <span class="n">bagmeta</span><span class="o">.</span><span class="n">end_time</span><span class="p">,</span>
+                      <span class="s1">&#39;msg_count&#39;</span><span class="p">:</span> <span class="n">con</span><span class="o">.</span><span class="n">msg_count</span><span class="p">,</span>
+                      <span class="s1">&#39;msg_type&#39;</span><span class="p">:</span> <span class="n">con</span><span class="o">.</span><span class="n">datatype</span><span class="p">,</span>
+                      <span class="s1">&#39;msg_type_def&#39;</span><span class="p">:</span> <span class="n">con</span><span class="o">.</span><span class="n">msg_def</span><span class="p">,</span>
+                      <span class="s1">&#39;msg_type_md5sum&#39;</span><span class="p">:</span> <span class="n">con</span><span class="o">.</span><span class="n">md5sum</span><span class="p">,</span>
+                      <span class="s1">&#39;topic&#39;</span><span class="p">:</span> <span class="n">topic</span><span class="p">}</span>
+            <span class="n">stream</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">create_stream</span><span class="p">(</span><span class="n">topic</span><span class="p">,</span> <span class="o">**</span><span class="n">header</span><span class="p">)</span>
+            <span class="n">bytopic</span><span class="p">[</span><span class="n">topic</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
+        <span class="n">alltopics</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">topics</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">group</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">group</span><span class="o">.</span><span class="n">finish</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">alltopics</span><span class="p">:</span>
+        <span class="k">return</span>
+
+    <span class="c1"># BUG: topic with more than one type is not supported</span>
+    <span class="k">for</span> <span class="n">topic</span><span class="p">,</span> <span class="n">raw</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">read_messages</span><span class="p">(</span><span class="n">paths</span><span class="p">,</span> <span class="n">topics</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">alltopics</span><span class="p">)):</span>
+        <span class="n">dct</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="n">raw</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;timestamp&#39;</span><span class="p">:</span> <span class="n">t</span><span class="o">.</span><span class="n">to_nsec</span><span class="p">()}</span>
+        <span class="k">for</span> <span class="n">stream</span> <span class="ow">in</span> <span class="n">bytopic</span><span class="p">[</span><span class="n">topic</span><span class="p">]:</span>
+            <span class="k">yield</span> <span class="n">stream</span><span class="o">.</span><span class="n">msg</span><span class="p">(</span><span class="n">dct</span><span class="p">)</span></div>
+
+<span class="n">messages</span> <span class="o">=</span> <span class="n">raw_messages</span>
+
+
+<span class="n">_ConnectionInfo</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;_ConnectionInfo&#39;</span><span class="p">,</span> <span class="s1">&#39;md5sum datatype msg_def&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="get_message_type"><a class="viewcode-back" href="../../nodes.html#marv_robotics.bag.get_message_type">[docs]</a><span class="k">def</span> <span class="nf">get_message_type</span><span class="p">(</span><span class="n">stream</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;ROS message type from definition stored for stream.&quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">stream</span><span class="o">.</span><span class="n">msg_type</span>
+    <span class="k">assert</span> <span class="n">stream</span><span class="o">.</span><span class="n">msg_type_def</span>
+    <span class="k">assert</span> <span class="n">stream</span><span class="o">.</span><span class="n">msg_type_md5sum</span>
+    <span class="n">info</span> <span class="o">=</span> <span class="n">_ConnectionInfo</span><span class="p">(</span><span class="n">md5sum</span><span class="o">=</span><span class="n">stream</span><span class="o">.</span><span class="n">msg_type_md5sum</span><span class="p">,</span>
+                           <span class="n">datatype</span><span class="o">=</span><span class="n">stream</span><span class="o">.</span><span class="n">msg_type</span><span class="p">,</span>
+                           <span class="n">msg_def</span><span class="o">=</span><span class="n">stream</span><span class="o">.</span><span class="n">msg_type_def</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_get_message_type</span><span class="p">(</span><span class="n">info</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016-2018, Ternaris.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

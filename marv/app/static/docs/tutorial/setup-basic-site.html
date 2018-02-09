@@ -1,0 +1,288 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Tutorial: Setup basic site &#8212; MARV 3.1.0 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/sphinx_paramlinks.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '3.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Tutorial: Write your own nodes" href="write-your-own.html" />
+    <link rel="prev" title="Installation" href="../install.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="tutorial-setup-basic-site">
+<span id="setup-basic-site"></span><h1>Tutorial: Setup basic site<a class="headerlink" href="#tutorial-setup-basic-site" title="Permalink to this headline">¶</a></h1>
+<p>A site holds everything MARV knows about your datasets. It contains one or more collections of datasets that can be browsed and queried separately. Here you learn how to setup a basic site with one collection and a couple of example bags.</p>
+<p>All code and configuration of this tutorial is included in the top-level <code class="docutils literal"><span class="pre">tutorial</span></code> folder of your release of MARV Robotics EE.</p>
+<div class="section" id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="../install.html#install"><span class="std std-ref">Installation</span></a></li>
+</ul>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> ls -1
+<span class="go">tutorial  # link to tutorial directory</span>
+<span class="go">venv      # python virtualenv (Installation)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="initialize-site">
+<h2>Initialize site<a class="headerlink" href="#initialize-site" title="Permalink to this headline">¶</a></h2>
+<p>Let’s start by creating a directory that will hold bag files, called a <em>scanroot</em>, and one for our marv site:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> mkdir scanroot
+<span class="gp">$</span> mkdir site
+</pre></div>
+</div>
+<p>Then create the site configuration file <code class="docutils literal"><span class="pre">site/marv.conf</span></code> with the following content:</p>
+<div class="highlight-cfg"><div class="highlight"><pre><span></span><span class="k">[marv]</span>
+<span class="na">collections</span> <span class="o">=</span> <span class="s">bags</span>
+
+<span class="k">[collection bags]</span>
+<span class="na">scanner</span> <span class="o">=</span> <span class="s">marv_robotics.bag:scan</span>
+<span class="na">scanroots</span> <span class="o">=</span><span class="s"></span>
+<span class="s">    ../scanroot</span>
+</pre></div>
+</div>
+<p>There is one collection that uses marv robotics’ default bag scanner <a class="reference internal" href="../scan.html#marv_robotics.bag.scan" title="marv_robotics.bag.scan"><code class="xref py py-func docutils literal"><span class="pre">marv_robotics.bag.scan()</span></code></a>, which is looking for bags in the scanroot we just created. We are ready to initialize the site – after activating the virtual environment marv is installed to, and simplifying marv’s log format as we are not interested in times:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">source</span> venv/bin/activate
+<span class="gp">(venv) $</span> <span class="nb">export</span> <span class="nv">MARV_LOG_FORMAT</span><span class="o">=</span><span class="s1">&#39;%(levelname).4s %(name)s %(message)s&#39;</span>
+<span class="gp">(venv) $</span> <span class="nb">cd</span> site
+<span class="gp">(venv:~/site) $</span> marv init
+<span class="go">INFO marv.site Initialized from /home/zaphod/site/marv.conf</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Whenever you change your configuration, remember to stop <code class="docutils literal"><span class="pre">uwsgi</span></code> (see below), rerun <code class="docutils literal"><span class="pre">marv</span> <span class="pre">init</span></code>, and then start <code class="docutils literal"><span class="pre">uwsgi</span></code> again.</p>
+</div>
+</div>
+<div class="section" id="serve-the-site">
+<h2>Serve the site<a class="headerlink" href="#serve-the-site" title="Permalink to this headline">¶</a></h2>
+<p>MARV is implemented using the Web Server Gateway Interface (<a class="reference external" href="https://www.python.org/dev/peps/pep-3333/">WSGI</a>) and we are use the <a class="reference external" href="https://uwsgi-docs.readthedocs.io/en/latest/">uwsgi</a> application server with a simple configuration file <code class="docutils literal"><span class="pre">site/uwsgi-dev.conf</span></code> suitable to serve it for development:</p>
+<div class="highlight-cfg"><div class="highlight"><pre><span></span><span class="k">[uwsgi]</span>
+<span class="na">http</span> <span class="o">=</span> <span class="s">:8000</span>
+<span class="na">processes</span> <span class="o">=</span> <span class="s">4</span>
+<span class="na">threads</span> <span class="o">=</span> <span class="s">1</span>
+<span class="na">enable-threads</span> <span class="o">=</span> <span class="s">true  ; needed if threads &lt; 2</span>
+<span class="na">manage-script-name</span> <span class="o">=</span> <span class="s">true</span>
+<span class="na">mount</span> <span class="o">=</span> <span class="s">/=marv.app.wsgi:application</span>
+<span class="na">env</span> <span class="o">=</span> <span class="s">MARV_APPLICATION_ROOT=/</span>
+<span class="na">env</span> <span class="o">=</span> <span class="s">MARV_CONFIG=%d/marv.conf</span>
+</pre></div>
+</div>
+<p>uwsgi got installed into the virtual environment during installation of <a class="reference internal" href="../install.html#marv-install"><span class="std std-ref">MARV Robotics</span></a> and you used it already to serve the documentation you are looking at. Let’s stop that and restart with the configuration we just created. The new one will continue to serve the documentation:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="go">CTRL-C</span>
+<span class="gp">(venv) $</span> uwsgi --ini site/uwsgi-dev.conf
+<span class="go">...</span>
+<span class="go">mounting marv.app.wsgi:application on /</span>
+<span class="go">WSGI app 0 (mountpoint=&#39;/&#39;) ready in 0 seconds on interpreter 0x207e9a0 pid: 3806 (default app)</span>
+<span class="go">*** uWSGI is running in multiple interpreter mode ***</span>
+<span class="go">spawned uWSGI worker 1 (pid: 3806, cores: 1)</span>
+<span class="go">spawned uWSGI worker 2 (pid: 3812, cores: 1)</span>
+<span class="go">spawned uWSGI worker 3 (pid: 3813, cores: 1)</span>
+<span class="go">spawned uWSGI worker 4 (pid: 3814, cores: 1)</span>
+</pre></div>
+</div>
+<p>You should see something like the above lines and MARV should be accessible via <a class="reference external" href="http://localhost:8000">http://localhost:8000</a>. In case you are running inside a container, make sure you forwarded the correct port.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">In the course of this tutorial we’ll keep changing the configuration. For these changes to take effect, uwsgi has to be stopped (CTRL-C) and the site reinitialized with <code class="docutils literal"><span class="pre">marv</span> <span class="pre">init</span></code>.</p>
+</div>
+</div>
+<div class="section" id="create-user-account">
+<h2>Create user account<a class="headerlink" href="#create-user-account" title="Permalink to this headline">¶</a></h2>
+<p><em>EE</em>:</p>
+<p>MARV requires you to be signed-in to see anything worthwhile. In order to be able to sign-in, you need to create a user first. Let’s make him an admin, so he can also discard datasets from marv. From now on we can continue in the terminal we used to initialize the marv site previously:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(venv:~/site) $</span> marv user add zaphod
+<span class="go">Password:</span>
+<span class="go">Repeat for confirmation:</span>
+<span class="gp">(venv:~/site) $</span> marv group adduser zaphod admin
+</pre></div>
+</div>
+<p>After creating the user, you should be able to sign-in using his credentials and be presented with an yet empty listing of the bags collection.</p>
+<p><em>CE</em>:</p>
+<p>The current community edition displays datasets without being signed-in and signed-in users all have the same permissions.</p>
+</div>
+<div class="section" id="populate-scanroot">
+<h2>Populate scanroot<a class="headerlink" href="#populate-scanroot" title="Permalink to this headline">¶</a></h2>
+<p>Let’s give marv two bag files from the <a class="reference external" href="http://projects.csail.mit.edu/stata/downloads.php">mit stata center data set</a>:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(venv:~/site) $</span> <span class="nb">cd</span> ../scanroot
+<span class="gp">(venv:~/scanroot) $</span> curl -O http://infinity.csail.mit.edu/data/2011/2011-01-24-06-18-27.bag
+<span class="gp">(venv:~/scanroot) $</span> curl -O http://infinity.csail.mit.edu/data/2011/2011-01-25-06-29-26.bag
+<span class="gp">(venv:~/scanroot) $</span> <span class="nb">cd</span> -
+<span class="gp">(venv:~/site) $</span>
+</pre></div>
+</div>
+<p>After scanning for datasets they will appear in the bag collection’s listing:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(venv:~/site) $</span> marv scan
+<span class="go">INFO marv.collection.bags added &lt;Dataset qmflhjcp6j3hsq7e56xzktf3yq 2011-01-24-06-18-27&gt;</span>
+<span class="go">INFO marv.collection.bags added &lt;Dataset vmgpndaq6frctewzwyqsrukg2y 2011-01-25-06-29-26&gt;</span>
+</pre></div>
+</div>
+<p>The <em>dataset ids</em>, or short <em>set ids</em>, are generated randomly – you will see different ones. If not, watch out for the Heart of Gold. Now, reload the browser. The listing should contain the two datasets. Visiting a detail view, there is no information yet, but it’s already possible to comment and tag the datasets.</p>
+</div>
+<div class="section" id="add-and-run-basic-nodes">
+<h2>Add and run basic nodes<a class="headerlink" href="#add-and-run-basic-nodes" title="Permalink to this headline">¶</a></h2>
+<p>MARV ships with some default nodes. Let’s run these:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(venv:~/site) $</span> marv run --collection<span class="o">=</span>bags
+<span class="go">INFO marv.run qmflhjcp6j.meta_table.dwz4xbykdt.default (meta_table) started</span>
+<span class="go">INFO marv.run qmflhjcp6j.summary_keyval.dwz4xbykdt.default (summary_keyval) started</span>
+<span class="go">INFO marv.run qmflhjcp6j.summary_keyval.dwz4xbykdt.default finished</span>
+<span class="go">INFO marv.run qmflhjcp6j.meta_table.dwz4xbykdt.default finished</span>
+<span class="go">INFO marv.run vmgpndaq6f.meta_table.dwz4xbykdt.default (meta_table) started</span>
+<span class="go">INFO marv.run vmgpndaq6f.summary_keyval.dwz4xbykdt.default (summary_keyval) started</span>
+<span class="go">INFO marv.run vmgpndaq6f.summary_keyval.dwz4xbykdt.default finished</span>
+<span class="go">INFO marv.run vmgpndaq6f.meta_table.dwz4xbykdt.default finished</span>
+</pre></div>
+</div>
+<p>By now the detail summary section is providing minimal information.</p>
+<p>Given that we are dealing with bag files, it makes sense to add nodes that extract and display bag meta information:</p>
+<div class="highlight-cfg"><div class="highlight"><pre><span></span><span class="k">[marv]</span>
+<span class="na">collections</span> <span class="o">=</span> <span class="s">bags</span>
+
+<span class="k">[collection bags]</span>
+<span class="na">scanner</span> <span class="o">=</span> <span class="s">marv_robotics.bag:scan</span>
+<span class="na">scanroots</span> <span class="o">=</span><span class="s"></span>
+<span class="s">    ../scanroot</span>
+
+<span class="hll"><span class="na">nodes</span> <span class="o">=</span><span class="s"></span>
+</span><span class="hll"><span class="s">    marv_nodes:dataset</span>
+</span><span class="hll"><span class="s">    marv_robotics.bag:bagmeta</span>
+</span><span class="hll"><span class="s">    marv_robotics.detail:bagmeta_table</span>
+</span><span class="hll"><span class="s">    marv_robotics.detail:topics_section</span>
+</span><span class="hll">
+</span><span class="hll"><span class="na">detail_summary_widgets</span> <span class="o">=</span><span class="s"></span>
+</span><span class="hll"><span class="s">    bagmeta_table</span>
+</span><span class="hll">
+</span><span class="hll"><span class="na">detail_sections</span> <span class="o">=</span><span class="s"></span>
+</span><span class="hll"><span class="s">    topics_section</span>
+</span></pre></div>
+</div>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(venv:~/site) $</span> marv run --collection<span class="o">=</span>bags
+<span class="go">INFO marv.run qmflhjcp6j.bagmeta_table.gahvdc4vpg.default (bagmeta_table) started</span>
+<span class="go">INFO marv.run qmflhjcp6j.topics_section.yjrewalqzc.default (topics_section) started</span>
+<span class="go">INFO marv.run qmflhjcp6j.bagmeta.dwz4xbykdt.default (bagmeta) started</span>
+<span class="go">INFO marv.run qmflhjcp6j.bagmeta.dwz4xbykdt.default finished</span>
+<span class="go">INFO marv.run qmflhjcp6j.topics_section.yjrewalqzc.default finished</span>
+<span class="go">INFO marv.run qmflhjcp6j.bagmeta_table.gahvdc4vpg.default finished</span>
+<span class="go">INFO marv.run vmgpndaq6f.bagmeta_table.gahvdc4vpg.default (bagmeta_table) started</span>
+<span class="go">INFO marv.run vmgpndaq6f.topics_section.yjrewalqzc.default (topics_section) started</span>
+<span class="go">INFO marv.run vmgpndaq6f.bagmeta.dwz4xbykdt.default (bagmeta) started</span>
+<span class="go">INFO marv.run vmgpndaq6f.bagmeta.dwz4xbykdt.default finished</span>
+<span class="go">INFO marv.run vmgpndaq6f.topics_section.yjrewalqzc.default finished</span>
+<span class="go">INFO marv.run vmgpndaq6f.bagmeta_table.gahvdc4vpg.default finished</span>
+</pre></div>
+</div>
+<p>Reload your browser and check the result.</p>
+</div>
+<div class="section" id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Permalink to this headline">¶</a></h2>
+<p>You initialized a marv site with one collection that looks for bag files in a scanroot directory. You setup uwsgi to serve your site for development purposes, created a user account for sign-in to the web application, populated the scanroot with some bag files and configured and ran nodes to display meta information about these bag files.</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> ls -1
+<span class="go">scanroot  # holds bag files</span>
+<span class="go">site      # holds config and databases</span>
+<span class="go">tutorial  # link to tutorial directory</span>
+<span class="go">venv      # python virtualenv (Installation)</span>
+</pre></div>
+</div>
+<p>Familiarize yourself a bit with the web frontend (<a class="reference external" href="http://localhost:8000">http://localhost:8000</a>). We intend it to be self-explanatory. Please let us know if you have questions.</p>
+<p>Now your are ready to write your first nodes <a class="reference internal" href="write-your-own.html#write-your-own"><span class="std std-ref">Tutorial: Write your own nodes</span></a>.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Tutorial: Setup basic site</a><ul>
+<li><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li><a class="reference internal" href="#initialize-site">Initialize site</a></li>
+<li><a class="reference internal" href="#serve-the-site">Serve the site</a></li>
+<li><a class="reference internal" href="#create-user-account">Create user account</a></li>
+<li><a class="reference internal" href="#populate-scanroot">Populate scanroot</a></li>
+<li><a class="reference internal" href="#add-and-run-basic-nodes">Add and run basic nodes</a></li>
+<li><a class="reference internal" href="#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="../install.html" title="previous chapter">Installation</a></li>
+      <li>Next: <a href="write-your-own.html" title="next chapter">Tutorial: Write your own nodes</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/tutorial/setup-basic-site.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016-2018, Ternaris.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="../_sources/tutorial/setup-basic-site.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

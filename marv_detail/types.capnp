@@ -212,6 +212,10 @@ struct Widget {
       max @5 :Float32 = 1000.0;
       default @6 :Float32 = 1.0;
     }
+    rangex @7 :List(Float32);
+    rangey @8 :List(Float32);
+    rangez @9 :List(Float32);
+    ranged @10 :List(Float32);
   }
 
   struct Video {

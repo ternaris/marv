@@ -258,7 +258,10 @@ class Collection(object):
         nodes = OrderedDict()
         linemap = {}
         for line in self.section.nodes:
-            nodename, node = find_obj(line, True)
+            try:
+                nodename, node = find_obj(line, True)
+            except AttributeError:
+                raise ConfigError(self.section, 'nodes', 'Cannot find node %s' % line)
             if node in linemap:
                 raise ConfigError(self.section, 'nodes',
                                   '%s already listed as %s' %
@@ -619,17 +622,18 @@ class Collection(object):
         except OSError:
             pass
         assert os.path.isdir(setdir), setdir
-        funcs = make_funcs(dataset, setdir, self.nodes)
+        store = Store(storedir, self.nodes)
+        funcs = make_funcs(dataset, setdir, store)
 
         summary_widgets = [
             x[0]._reader for x in
-            [node.load(setdir, default=None) for node in self.detail_summary_widgets]
+            [store.load(setdir, node, default=None) for node in self.detail_summary_widgets]
             if x
         ]
 
         sections = [
             x[0]._reader for x in
-            [node.load(setdir, default=None) for node in self.detail_sections]
+            [store.load(setdir, node, default=None) for node in self.detail_sections]
             if x
         ]
 
@@ -649,7 +653,8 @@ class Collection(object):
     def render_listing(self, dataset):
         storedir = self.config.marv.storedir
         setdir = os.path.join(storedir, str(dataset.setid))
-        funcs = make_funcs(dataset, setdir, self.nodes)
+        store = Store(storedir, self.nodes)
+        funcs = make_funcs(dataset, setdir, store)
 
         values = []
         for col, functree in self.listing_functions:

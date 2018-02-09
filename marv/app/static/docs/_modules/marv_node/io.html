@@ -1,0 +1,283 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>marv_node.io &#8212; MARV 3.1.0 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/sphinx_paramlinks.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '3.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for marv_node.io</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1">#</span>
+<span class="c1"># MARV Enterprise Edition</span>
+<span class="c1"># Copyright (C) 2016-2017  Ternaris, Munich, Germany</span>
+<span class="c1">#</span>
+<span class="c1"># This file is part of MARV Enterprise Edition</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span>
+
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">namedtuple</span>
+<span class="kn">from</span> <span class="nn">numbers</span> <span class="k">import</span> <span class="n">Integral</span>
+
+<span class="kn">from</span> <span class="nn">.mixins</span> <span class="k">import</span> <span class="n">Keyed</span><span class="p">,</span> <span class="n">Task</span><span class="p">,</span> <span class="n">Request</span>
+<span class="kn">from</span> <span class="nn">.stream</span> <span class="k">import</span> <span class="n">Handle</span>
+
+
+<span class="k">class</span> <span class="nc">Abort</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+
+<div class="viewcode-block" id="create_stream"><a class="viewcode-back" href="../../api/marv.html#marv.create_stream">[docs]</a><span class="k">def</span> <span class="nf">create_stream</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">header</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Create a stream for publishing messages.</span>
+
+<span class="sd">    All keyword arguments will be used to form the header.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">),</span> <span class="n">name</span>
+    <span class="k">return</span> <span class="n">CreateStream</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">header</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="create_group"><a class="viewcode-back" href="../../api/marv.html#marv.create_group">[docs]</a><span class="k">def</span> <span class="nf">create_group</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">header</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">),</span> <span class="n">name</span>
+    <span class="k">return</span> <span class="n">CreateStream</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">header</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">fork</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">group</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">),</span> <span class="n">name</span>
+    <span class="k">assert</span> <span class="n">inputs</span>
+    <span class="k">return</span> <span class="n">Fork</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">group</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="get_logger"><a class="viewcode-back" href="../../api/marv.html#marv.get_logger">[docs]</a><span class="k">def</span> <span class="nf">get_logger</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">GetLogger</span><span class="p">()</span></div>
+
+
+<span class="k">def</span> <span class="nf">get_requested</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">GetRequested</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="get_stream"><a class="viewcode-back" href="../../api/marv.html#marv.get_stream">[docs]</a><span class="k">def</span> <span class="nf">get_stream</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;default&#39;</span><span class="p">,</span> <span class="n">setid</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">GetStream</span><span class="p">(</span><span class="n">setid</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="make_file"><a class="viewcode-back" href="../../api/marv.html#marv.make_file">[docs]</a><span class="k">def</span> <span class="nf">make_file</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">MakeFile</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="pull"><a class="viewcode-back" href="../../api/marv.html#marv.pull">[docs]</a><span class="k">def</span> <span class="nf">pull</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="nb">enumerate</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Pulls next message for handle.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        handle: A :class:`.stream.Handle` or GroupHandle.</span>
+<span class="sd">        enumerate (bool): boolean to indicate whether a tuple ``(idx, msg)``</span>
+<span class="sd">            should be returned, not unlike Python&#39;s enumerate().</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A :class:`Pull` task to be yielded. Marv will send the</span>
+<span class="sd">        corresponding message as soon as it is available. For groups</span>
+<span class="sd">        this message will be a handle to a member of the</span>
+<span class="sd">        group. Members of groups are either streams or groups.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        Pulling (enumerated) message from stream::</span>
+
+<span class="sd">            msg = yield marv.pull(stream)</span>
+<span class="sd">            idx, msg = yield marv.pull(stream, enumerate=True)</span>
+
+<span class="sd">        Pulling stream from group and message from stream::</span>
+
+<span class="sd">            stream = yield marv.pull(group)  # a group of streams</span>
+<span class="sd">            msg = yield marv.pull(stream)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">Handle</span><span class="p">),</span> <span class="n">handle</span>
+    <span class="k">return</span> <span class="n">Pull</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="nb">enumerate</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="pull_all"><a class="viewcode-back" href="../../api/marv.html#marv.pull_all">[docs]</a><span class="k">def</span> <span class="nf">pull_all</span><span class="p">(</span><span class="o">*</span><span class="n">handles</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Pulls next message of all handles.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">PullAll</span><span class="p">(</span><span class="n">handles</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">pull_any</span><span class="p">(</span><span class="n">handles</span><span class="p">):</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+
+<div class="viewcode-block" id="push"><a class="viewcode-back" href="../../api/marv.html#marv.push">[docs]</a><span class="k">def</span> <span class="nf">push</span><span class="p">(</span><span class="n">msg</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">Push</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="set_header"><a class="viewcode-back" href="../../api/marv.html#marv.set_header">[docs]</a><span class="k">def</span> <span class="nf">set_header</span><span class="p">(</span><span class="o">**</span><span class="n">header</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Set the header of a stream or group.&quot;&quot;&quot;</span>
+
+    <span class="c1"># If a node is configured to have a header, the header needs to be</span>
+    <span class="c1"># set before yielding any messages or creating group members. Once a</span>
+    <span class="c1"># header is set, a handle is created and dependent nodes can be</span>
+    <span class="c1"># instantiated. For streams without headers this happens right away.</span>
+
+    <span class="c1">#     @marv.node(header=True)</span>
+    <span class="c1">#     def node():</span>
+    <span class="c1">#         yield marv.set_header(title=&#39;Title&#39;)</span>
+
+    <span class="c1"># &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">SetHeader</span><span class="p">(</span><span class="n">header</span><span class="p">)</span></div>
+
+
+<span class="n">CreateStream</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;CreateStream&#39;</span><span class="p">,</span> <span class="s1">&#39;parent name group header&#39;</span><span class="p">)</span>
+<span class="n">Fork</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;Fork&#39;</span><span class="p">,</span> <span class="s1">&#39;name inputs group&#39;</span><span class="p">)</span>
+<span class="n">GetLogger</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;GetLogger&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+<span class="n">GetRequested</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;GetRequested&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+<span class="n">GetStream</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;GetStream&#39;</span><span class="p">,</span> <span class="s1">&#39;setid node name&#39;</span><span class="p">)</span>
+<span class="n">MakeFile</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;MakeFile&#39;</span><span class="p">,</span> <span class="s1">&#39;handle name&#39;</span><span class="p">)</span>
+
+<span class="n">Pull</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;Pull&#39;</span><span class="p">,</span> <span class="s1">&#39;handle enumerate&#39;</span><span class="p">)</span>
+<span class="n">PullAll</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;PullAll&#39;</span><span class="p">,</span> <span class="s1">&#39;handles&#39;</span><span class="p">)</span>
+<span class="n">PullAny</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;PullAny&#39;</span><span class="p">,</span> <span class="s1">&#39;handles&#39;</span><span class="p">)</span>
+<span class="n">PullSome</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;PullSome&#39;</span><span class="p">,</span> <span class="s1">&#39;handles&#39;</span><span class="p">)</span>
+<span class="n">Push</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;Push&#39;</span><span class="p">,</span> <span class="s1">&#39;output&#39;</span><span class="p">)</span>
+<span class="n">SetHeader</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;SetHeader&#39;</span><span class="p">,</span> <span class="s1">&#39;header&#39;</span><span class="p">)</span>
+
+<span class="c1"># TODO: Rename</span>
+<span class="n">Request</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Pull</span><span class="p">)</span>
+<span class="n">Request</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">PullAll</span><span class="p">)</span>
+<span class="n">Request</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">PullAny</span><span class="p">)</span>
+<span class="n">Request</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">PullSome</span><span class="p">)</span>
+<span class="n">Request</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Push</span><span class="p">)</span>
+<span class="n">Request</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">SetHeader</span><span class="p">)</span>
+
+<span class="n">Request</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">CreateStream</span><span class="p">)</span>
+<span class="n">Request</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Fork</span><span class="p">)</span>
+<span class="n">Request</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">GetLogger</span><span class="p">)</span>
+<span class="n">Request</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">GetRequested</span><span class="p">)</span>
+<span class="n">Request</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">GetStream</span><span class="p">)</span>
+<span class="n">Request</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">MakeFile</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Signal</span><span class="p">(</span><span class="n">Task</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+
+<span class="k">class</span> <span class="nc">Next</span><span class="p">(</span><span class="n">Signal</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Instruct to send next pending task.&quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">()</span>
+
+<span class="k">class</span> <span class="nc">Paused</span><span class="p">(</span><span class="n">Signal</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Indicate a generator has paused.&quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">()</span>
+
+<span class="k">class</span> <span class="nc">Resume</span><span class="p">(</span><span class="n">Signal</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Instruct a generator to resume.&quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">()</span>
+
+<span class="k">class</span> <span class="nc">TheEnd</span><span class="p">(</span><span class="n">Signal</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Indicate the end of a stream, resulting in None being sent into consumers.&quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">()</span>
+
+<span class="n">NEXT</span> <span class="o">=</span> <span class="n">Next</span><span class="p">()</span>
+<span class="n">PAUSED</span> <span class="o">=</span> <span class="n">Paused</span><span class="p">()</span>
+<span class="n">RESUME</span> <span class="o">=</span> <span class="n">Resume</span><span class="p">()</span>
+<span class="n">THEEND</span> <span class="o">=</span> <span class="n">TheEnd</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">MsgRequest</span><span class="p">(</span><span class="n">Task</span><span class="p">,</span> <span class="n">Keyed</span><span class="p">):</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;_handle&#39;</span><span class="p">,</span> <span class="s1">&#39;_idx&#39;</span><span class="p">,</span> <span class="s1">&#39;__weakref__&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">key</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_handle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_idx</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handle</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">idx</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_idx</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handle</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">requestor</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">Integral</span><span class="p">),</span> <span class="n">idx</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_handle</span> <span class="o">=</span> <span class="n">handle</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_idx</span> <span class="o">=</span> <span class="n">idx</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_requestor</span> <span class="o">=</span> <span class="n">requestor</span>
+
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;MsgRequest(</span><span class="si">{}</span><span class="s1">, </span><span class="si">{!r}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_handle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_idx</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016-2018, Ternaris.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

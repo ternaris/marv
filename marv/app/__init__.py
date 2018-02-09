@@ -22,10 +22,12 @@ from __future__ import absolute_import, division, print_function
 
 import base64
 import os
+import sys
 from logging import getLogger
 from uuid import uuid4
 
 import flask
+import sqlalchemy.exc
 
 from ..model import db
 
@@ -33,7 +35,7 @@ from ..model import db
 log = getLogger(__name__)
 
 
-def create_app(site, config_obj=None, app_root=None, **kw):
+def create_app(site, config_obj=None, app_root=None, checkdb=False, **kw):
     app = flask.Flask(__name__)
     app.site = site
 
@@ -62,6 +64,13 @@ def create_app(site, config_obj=None, app_root=None, **kw):
     app.config.update(kw)
 
     db.init_app(app)
+    if checkdb:
+        with app.app_context():
+            try:
+                db.session.execute('SELECT name FROM sqlite_master WHERE type="table";')
+            except sqlalchemy.exc.OperationalError:
+                log.critical('Database not initialized, run marv init and restart')
+                sys.exit(1)
 
     from marv_webapi import webapi
     webapi.init_app(app, url_prefix='/marv/api')
@@ -81,8 +90,27 @@ def create_app(site, config_obj=None, app_root=None, **kw):
         index_html = index_html.replace(
             '<script async src="main-built.js"></script>',
             '<script src="data:text/javascript;base64,{}"></script>'.format(data) +
-            '\n<script async src="main-built.js"></script>'
+            '\n<script async src="main-built.js"></script>', 1
         )
+
+    customcss = os.path.join(site.config.marv.frontenddir, 'custom.css')
+    try:
+        with(open(customcss)) as f:
+            data = base64.b64encode(f.read())
+    except IOError:
+        pass
+    else:
+        assert '<link async rel="stylesheet" href="main-built.css" />' in index_html
+        index_html = index_html.replace(
+            '<link async rel="stylesheet" href="main-built.css" />',
+            '<link async rel="stylesheet" href="main-built.css" />' +
+            '<link rel="stylesheet" href="data:text/css;base64,{}" />'.format(data), 1
+        )
+
+    customdir = os.path.join(site.config.marv.frontenddir, 'custom')
+    @app.route('/custom/<path:path>')
+    def custom(path):
+        return flask.send_from_directory(customdir, path, conditional=True)
 
     @app.route('/', defaults={'path': ''})
     @app.route('/<path:path>')
@@ -92,11 +120,13 @@ def create_app(site, config_obj=None, app_root=None, **kw):
 
         if path == 'index.html':
             return index_html
-        elif path == 'docs':
+
+        if path == 'docs':
             return flask.redirect(flask.request.base_url + '/', 301)
 
         if path == 'docs/':
             path = 'docs/index.html'
+
         return flask.send_from_directory(staticdir, path, conditional=True)
 
     return app

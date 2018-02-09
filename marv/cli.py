@@ -22,6 +22,7 @@ from __future__ import absolute_import, division, print_function
 
 import json
 import os
+import warnings
 from logging import getLogger
 
 import click
@@ -40,6 +41,7 @@ from marv_store import DirectoryAlreadyExists
 
 
 log = getLogger(__name__)
+warnings.simplefilter('always', DeprecationWarning)
 
 
 class NodeParamType(click.ParamType):
@@ -51,7 +53,7 @@ class NodeParamType(click.ParamType):
 NODE = NodeParamType()
 
 
-def create_app(push=True):
+def create_app(push=True, init=False):
     ctx = click.get_current_context()
     siteconf = ctx.obj
     if siteconf is None:
@@ -60,7 +62,7 @@ def create_app(push=True):
                  '  marv --config /path/to/marv.conf\n')
     site = Site(siteconf)
     try:
-        app = marv.app.create_app(site)
+        app = marv.app.create_app(site, checkdb=not init)
     except ConfigError as e:
         click.echo('Error {}'.format(e.args[0]), err=True)
         click.get_current_context().exit(1)
@@ -68,6 +70,8 @@ def create_app(push=True):
         appctx = app.app_context()
         appctx.push()
         ctx.call_on_close(appctx.pop)
+    if init:
+        site.init()
     return app
 
 
@@ -249,7 +253,7 @@ def marvcli_restore(file):
 @marvcli.command('init')
 def marvcli_init():
     """(Re-)initialize marv site according to config"""
-    create_app().site.init()
+    create_app(init=True)
 
 
 @marvcli.command('query')
@@ -299,10 +303,11 @@ def marvcli_query(ctx, list_tags, collections, discarded, outdated, path, tags, 
 
 @marvcli.command('run', short_help='Run nodes for DATASETS')
 @click.option('--node', 'selected_nodes', multiple=True,
-              help='Run individual nodes instead of all nodes used by detail and listing.'
+              help='Run individual nodes instead of all nodes used by detail and listing'
               ' Use --list-nodes for a list of known nodes. Beyond that any node can be run'
               ' by referencing it with package.module:node')
 @click.option('--list-nodes', is_flag=True, help='List known nodes instead of running')
+@click.option('--list-dependent', is_flag=True, help='List nodes depending on selected nodes')
 @click.option('--deps/--no-deps', default=True, show_default=True,
               help='Run dependencies of requested nodes')
 @click.option('--exclude', 'excluded_nodes', multiple=True,
@@ -314,6 +319,8 @@ def marvcli_query(ctx, list_tags, collections, discarded, outdated, path, tags, 
 # discarding does not delete, but simply registers the most recent generation to be empty
 @click.option('--force-deps/--no-force-deps',
               help='Force run of dependencies whose output is already available from store')
+@click.option('--force-dependent/--no-force-dependent',
+              help='Force run of all nodes depending on selected nodes, directly or indirectly')
 @click.option('--keep/--no-keep', help='Keep uncommitted streams for debugging')
 @click.option('--keep-going/--no-keep-going',
               help='In case of an exception keep going with remaining datasets')
@@ -327,13 +334,16 @@ def marvcli_query(ctx, list_tags, collections, discarded, outdated, path, tags, 
               help='Run nodes for all datasets of selected collections, use "*" for all')
 @click.argument('datasets', nargs=-1)
 @click.pass_context
-def marvcli_run(ctx, datasets, deps, excluded_nodes, force, force_deps,
-             keep, keep_going, list_nodes, selected_nodes, update_detail,
-             update_listing, cachesize, collections):
+def marvcli_run(ctx, datasets, deps, excluded_nodes, force, force_dependent,
+                force_deps, keep, keep_going, list_nodes,
+                list_dependent, selected_nodes, update_detail,
+                update_listing, cachesize, collections):
     """Run nodes for selected datasets.
 
-    Datasets are specified by a list of set ids, --all-datasets, or
-    --collection <name>.
+    Datasets are specified by a list of set ids, or --collection
+    <name>, use --collection=* to run for all collections. --node in
+    conjunction with --collection=* will pick those collections for
+    which the selected nodes are configured.
 
     Set ids may be abbreviated to any uniquely identifying
     prefix. Suffix a prefix by '+' to match multiple.
@@ -341,6 +351,9 @@ def marvcli_run(ctx, datasets, deps, excluded_nodes, force, force_deps,
     """
     if collections and datasets:
         ctx.fail('--collection and DATASETS are mutually exclusive')
+
+    if list_dependent and not selected_nodes:
+        ctx.fail('--list-dependent needs at least one selected --node')
 
     if not any([datasets, collections, list_nodes]):
         click.echo(ctx.get_help())
@@ -352,7 +365,13 @@ def marvcli_run(ctx, datasets, deps, excluded_nodes, force, force_deps,
     site = create_app().site
 
     if '*' in collections:
-        collections = None
+        if selected_nodes:
+            collections = [k for k, v in site.collections.items()
+                           if set(v.nodes).issuperset(selected_nodes)]
+            if not collections:
+                ctx.fail('No collections have all selected nodes')
+        else:
+            collections = None
     else:
         for col in collections:
             if col not in site.collections:
@@ -364,6 +383,15 @@ def marvcli_run(ctx, datasets, deps, excluded_nodes, force, force_deps,
             for name in sorted(site.collections[col].nodes):
                 if name == 'dataset':
                     continue
+                click.echo('    {}'.format(name))
+        return
+
+    if list_dependent:
+        for col in (collections or sorted(site.collections.keys())):
+            click.echo('{}:'.format(col))
+            dependent = {x for name in selected_nodes
+                         for x in site.collections[col].nodes[name].dependent}
+            for name in sorted(x.name for x in dependent):
                 click.echo('    {}'.format(name))
         return
 
@@ -381,13 +409,13 @@ def marvcli_run(ctx, datasets, deps, excluded_nodes, force, force_deps,
     for setid in setids:
         if IPDB:
             site.run(setid, selected_nodes, deps, force, keep,
-                     update_detail, update_listing, excluded_nodes,
-                     cachesize=cachesize)
+                     force_dependent, update_detail, update_listing,
+                     excluded_nodes, cachesize=cachesize)
         else:
             try:
                 site.run(setid, selected_nodes, deps, force, keep,
-                         update_detail, update_listing, excluded_nodes,
-                         cachesize=cachesize)
+                         force_dependent, update_detail, update_listing,
+                         excluded_nodes, cachesize=cachesize)
             except UnknownNode as e:
                 ctx.fail('Collection {} has no node {}'.format(*e.args))
             except NoResultFound:

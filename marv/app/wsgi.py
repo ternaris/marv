@@ -29,4 +29,4 @@ import marv.app
 import marv.site
 site = marv.site.Site(config)
 site.load_for_web()
-application = marv.app.create_app(site, app_root=app_root)
+application = marv.app.create_app(site, app_root=app_root, checkdb=True)

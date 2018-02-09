@@ -20,6 +20,8 @@
 
 from __future__ import absolute_import, division, print_function
 
+from marv_node.node import StreamSpec as _StreamSpec
+
 
 def select(node, name):
     """Select specific stream of a node by name.
@@ -31,5 +33,4 @@ def select(node, name):
     Returns:
         Node outputting selected stream.
     """
-    # Do not use this directly. It is an internal deprecated API.
-    return node[name]
+    return _StreamSpec(node, name)

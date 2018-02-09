@@ -27,12 +27,18 @@ import os
 import shutil
 import tempfile
 import unittest
+import warnings
 from collections import namedtuple
 from contextlib import contextmanager
 from logging import getLogger
 from marv_cli import create_loglevels
 
 create_loglevels()
+warnings.simplefilter('always', DeprecationWarning)
+
+from marv_node import run as marv_node_run
+marv_node_run.RAISE_IF_UNFINISHED
+marv_node_run.RAISE_IF_UNFINISHED = True
 
 #from . import marv
 from ..io import get_logger as marv_get_logger

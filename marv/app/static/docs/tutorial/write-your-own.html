@@ -1,0 +1,722 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Tutorial: Write your own nodes &#8212; MARV 3.1.0 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/sphinx_paramlinks.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '3.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Debugging" href="../debug.html" />
+    <link rel="prev" title="Tutorial: Setup basic site" href="setup-basic-site.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="tutorial-write-your-own-nodes">
+<span id="write-your-own"></span><h1>Tutorial: Write your own nodes<a class="headerlink" href="#tutorial-write-your-own-nodes" title="Permalink to this headline">¶</a></h1>
+<p>Within MARV, nodes are responsible to extract and process data from your log files as base for filtering and visualization. MARV Robotics already ships with a set of nodes (<code class="xref py py-mod docutils literal"><span class="pre">marv_robotics</span></code>). Here, you find a quick tutorial on writing your own.</p>
+<p>All code and configuration of this tutorial is included with your release of MARV Robotics EE in the top-level <code class="docutils literal"><span class="pre">tutorial</span></code> folder.</p>
+<div class="section" id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="../install.html#install"><span class="std std-ref">Installation</span></a></li>
+<li><a class="reference internal" href="setup-basic-site.html#setup-basic-site"><span class="std std-ref">Tutorial: Setup basic site</span></a></li>
+</ul>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> ls -1
+<span class="go">scanroot  # holds bag files (Setup basic site)</span>
+<span class="go">site      # holds config and databases (Setup basic site)</span>
+<span class="go">tutorial  # link to tutorial directory</span>
+<span class="go">venv      # python virtualenv (Installation)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="create-python-package">
+<h2>Create python package<a class="headerlink" href="#create-python-package" title="Permalink to this headline">¶</a></h2>
+<p>First, you need a python package to hold the code of your nodes. Don’t worry too much about the name: nodes can be easily moved to other packages later on:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> mkdir mynodes  <span class="c1"># directory holding python distribution</span>
+<span class="gp">$</span> cp tutorial/code/setup.py mynodes/
+
+<span class="gp">$</span> mkdir mynodes/mynodes  <span class="c1"># directory holding python package</span>
+<span class="gp">$</span> touch mynodes/mynodes/__init__.py
+</pre></div>
+</div>
+<p>It might make sense that the distribution directory name matches the name provided in <code class="docutils literal"><span class="pre">setup.py</span></code> (see below). There, also the python package directory is listed as <code class="docutils literal"><span class="pre">packages</span></code> – it must not contain dashes but may contain underscores. One python distribution can contain many packages. At some point you might want to dive into <a class="reference external" href="https://python-packaging.readthedocs.io/en/latest/">Python Packaging</a></p>
+<p>We placed the Python code of this tutorial into the public domain, so you can freely pick from it.  Beware, not to copy the license file and headers and adjust <code class="docutils literal"><span class="pre">setup.py</span></code> accordingly, except if you intend to release your code into the public domain as well:</p>
+<p><strong>setup.py</strong></p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1">#</span>
+<span class="c1"># This file is part of MARV Tutorial Code by Ternaris</span>
+<span class="c1">#</span>
+<span class="c1"># To the extent possible under law, the person who associated CC0</span>
+<span class="c1"># with MARV Tutorial Code has waived all copyright and related or</span>
+<span class="c1"># neighboring rights to MARV Tutorial Code.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the CC0 legalcode along with</span>
+<span class="c1"># this work.  If not, see</span>
+<span class="c1"># &lt;http://creativecommons.org/publicdomain/zero/1.0/&gt;.</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span>
+
+<span class="kn">from</span> <span class="nn">setuptools</span> <span class="k">import</span> <span class="n">setup</span>
+
+<span class="n">setup</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;marv-tutorial-code&#39;</span><span class="p">,</span>
+      <span class="n">version</span><span class="o">=</span><span class="s1">&#39;1.0&#39;</span><span class="p">,</span>
+      <span class="n">description</span><span class="o">=</span><span class="s1">&#39;MARV Tutorial Code&#39;</span><span class="p">,</span>
+      <span class="n">url</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+      <span class="n">author</span><span class="o">=</span><span class="s1">&#39;Ternaris&#39;</span><span class="p">,</span>
+      <span class="n">author_email</span><span class="o">=</span><span class="s1">&#39;team@ternaris.com&#39;</span><span class="p">,</span>
+      <span class="n">license</span><span class="o">=</span><span class="s1">&#39;CC0&#39;</span><span class="p">,</span>
+      <span class="n">packages</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;marv_tutorial&#39;</span><span class="p">],</span>
+      <span class="n">install_requires</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;marv&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;marv-robotics&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;matplotlib&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;mpld3&#39;</span><span class="p">],</span>
+      <span class="n">include_package_data</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+      <span class="n">zip_safe</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The only purpose of the <code class="docutils literal"><span class="pre">__future__</span></code> <a class="reference external" href="https://docs.python.org/2/library/__future__.html">imports</a> <em>here</em> is to get you into the habit of not forgetting them.</p>
+<p>Next, it’s a good idea to place this code under version control:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> cp tutorial/code/.gitignore mynodes/
+<span class="gp">$</span> <span class="nb">cd</span> mynodes
+<span class="gp">$</span> git init
+<span class="gp">$</span> git add .
+<span class="gp">$</span> git commit -m <span class="s1">&#39;initial&#39;</span>
+<span class="gp">$</span> <span class="nb">cd</span> -
+</pre></div>
+</div>
+<p>Finally, for marv to make use of your nodes, you need to install the package into the virtual python enviroment. Install it in development mode (<code class="docutils literal"><span class="pre">-e</span></code>) for changes to be picked up without the need to reinstall. Activate the virtualenv first, if it is not already activated. Most of the time we use just <code class="docutils literal"><span class="pre">$</span></code> as prompt you can run the commands also with an activated virtualenv, creating a virtualenv being a notable exception. In case we use <code class="docutils literal"><span class="pre">(venv)</span> <span class="pre">$</span></code> as prompt, it has to be activated:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">source</span> venv/bin/activate
+<span class="gp">(venv) $</span> pip install -e mynodes
+</pre></div>
+</div>
+</div>
+<div class="section" id="first-node-extract-an-image">
+<h2>First node: Extract an image<a class="headerlink" href="#first-node-extract-an-image" title="Permalink to this headline">¶</a></h2>
+<p>For sake of simplicity, we are placing all code directly into the package’s <code class="docutils literal"><span class="pre">__init__.py</span></code>. Later you might want to split this up into individual modules or <a class="reference external" href="https://docs.python.org/2/tutorial/modules.html#packages">packages</a>. Following is the full code of the image extraction node. We’ll be dissecting it shortly.</p>
+<p><strong>marv_tutorial/__init__.py</strong></p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span>
+
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">cv2</span>
+<span class="kn">import</span> <span class="nn">cv_bridge</span>
+<span class="kn">import</span> <span class="nn">matplotlib</span><span class="p">;</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;Agg&#39;</span><span class="p">)</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">mpld3</span>
+<span class="n">imgmsg_to_cv2</span> <span class="o">=</span> <span class="n">cv_bridge</span><span class="o">.</span><span class="n">CvBridge</span><span class="p">()</span><span class="o">.</span><span class="n">imgmsg_to_cv2</span>
+
+<span class="kn">import</span> <span class="nn">marv</span>
+<span class="kn">from</span> <span class="nn">marv_nodes.types_capnp</span> <span class="k">import</span> <span class="n">File</span>
+<span class="kn">from</span> <span class="nn">marv_detail.types_capnp</span> <span class="k">import</span> <span class="n">Section</span><span class="p">,</span> <span class="n">Widget</span>
+<span class="kn">from</span> <span class="nn">marv_robotics.bag</span> <span class="k">import</span> <span class="n">get_message_type</span><span class="p">,</span> <span class="n">raw_messages</span>
+
+<span class="n">TOPIC</span> <span class="o">=</span> <span class="s1">&#39;/wide_stereo/left/image_rect_throttle&#39;</span>
+
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="nd">@marv</span><span class="o">.</span><span class="n">node</span><span class="p">(</span><span class="n">File</span><span class="p">)</span>
+<span class="nd">@marv</span><span class="o">.</span><span class="n">input</span><span class="p">(</span><span class="s1">&#39;cam&#39;</span><span class="p">,</span> <span class="n">marv</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">raw_messages</span><span class="p">,</span> <span class="n">TOPIC</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">image</span><span class="p">(</span><span class="n">cam</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Extract first image of input stream to jpg file.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        cam: Input stream of raw rosbag messages.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        File instance for first image of input stream.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Set output stream title and pull first message</span>
+    <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">set_header</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="n">cam</span><span class="o">.</span><span class="n">topic</span><span class="p">)</span>
+    <span class="n">msg</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">pull</span><span class="p">(</span><span class="n">cam</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">msg</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span>
+
+    <span class="c1"># Deserialize raw ros message</span>
+    <span class="n">pytype</span> <span class="o">=</span> <span class="n">get_message_type</span><span class="p">(</span><span class="n">cam</span><span class="p">)</span>
+    <span class="n">rosmsg</span> <span class="o">=</span> <span class="n">pytype</span><span class="p">()</span>
+    <span class="n">rosmsg</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="c1"># Write image to jpeg and push it to output stream</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">.jpg&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cam</span><span class="o">.</span><span class="n">topic</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="s1">&#39;:&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">:])</span>
+    <span class="n">imgfile</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">make_file</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+    <span class="n">img</span> <span class="o">=</span> <span class="n">imgmsg_to_cv2</span><span class="p">(</span><span class="n">rosmsg</span><span class="p">,</span> <span class="s2">&quot;rgb8&quot;</span><span class="p">)</span>
+    <span class="n">cv2</span><span class="o">.</span><span class="n">imwrite</span><span class="p">(</span><span class="n">imgfile</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">img</span><span class="p">,</span> <span class="p">(</span><span class="n">cv2</span><span class="o">.</span><span class="n">IMWRITE_JPEG_QUALITY</span><span class="p">,</span> <span class="mi">60</span><span class="p">))</span>
+    <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="n">imgfile</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>At first glance, there are three blocks of imports: python standard library, external libraries, and own project. Further, there we define a topic used during the tutorial and a node seems to be based on a Python generator function that uses <a class="reference external" href="https://docs.python.org/2.7/reference/expressions.html#yieldexpr" title="(in Python v2.7)"><code class="docutils literal"><span class="pre">Yield</span> <span class="pre">expressions</span></code></a>.</p>
+<p>Let’s look at this, piece-by-piece.</p>
+<div class="section" id="declare-image-node">
+<h3>Declare image node<a class="headerlink" href="#declare-image-node" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="nd">@marv</span><span class="o">.</span><span class="n">node</span><span class="p">(</span><span class="n">File</span><span class="p">)</span>
+<span class="nd">@marv</span><span class="o">.</span><span class="n">input</span><span class="p">(</span><span class="s1">&#39;cam&#39;</span><span class="p">,</span> <span class="n">marv</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">raw_messages</span><span class="p">,</span> <span class="n">TOPIC</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">image</span><span class="p">(</span><span class="n">cam</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Extract first image of input stream to jpg file.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        cam: Input stream of raw rosbag messages.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        File instance for first image of input stream.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</pre></div>
+</div>
+<p>We are declaring a <code class="docutils literal"><span class="pre">marv.node</span></code> using <a class="reference external" href="https://www.python.org/dev/peps/pep-0318/#motivation">decorator syntax</a> based on a function named <code class="docutils literal"><span class="pre">image</span></code>, which becomes also the name of the node. The node will output <code class="docutils literal"><span class="pre">File</span></code> messages and consume a selected topic of raw messages as input stream <code class="docutils literal"><span class="pre">cam</span></code>. According to the docstring it will return the first image of this stream. The docstring is following the <a class="reference external" href="http://google.github.io/styleguide/pyguide.html">Google Python Style Guide</a> which is understood by <a class="reference external" href="http://www.sphinx-doc.org/en/stable/">Sphinx</a> using <a class="reference external" href="https://sphinxcontrib-napoleon.readthedocs.io/en/latest/">Napoleon</a> to generate documentation.</p>
+</div>
+<div class="section" id="yield-to-interact-with-marv">
+<h3>Yield to interact with marv<a class="headerlink" href="#yield-to-interact-with-marv" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-default"><div class="highlight"><pre><span></span>    <span class="c1"># Set output stream title and pull first message</span>
+    <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">set_header</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="n">cam</span><span class="o">.</span><span class="n">topic</span><span class="p">)</span>
+    <span class="n">msg</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">pull</span><span class="p">(</span><span class="n">cam</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">msg</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span>
+</pre></div>
+</div>
+<p>The input stream’s topic is set as title for the image node’s output stream and we are pulling the first message from the input stream. In case there is none, we simply return without publishing anything.</p>
+<p><a class="reference external" href="https://docs.python.org/2.7/reference/expressions.html#yieldexpr" title="(in Python v2.7)"><code class="docutils literal"><span class="pre">Yield</span> <span class="pre">expressions</span></code></a> turn Python functions into generator functions. In short: <code class="docutils literal"><span class="pre">yield</span></code> works like <code class="docutils literal"><span class="pre">return</span></code>, but preserves the function state to enable the calling context – the marv framework – to reactivate the generator function and resume operation where it left as if it were a function call with optional return value. In case of the second line marv sends the first message of the <code class="docutils literal"><span class="pre">cam</span></code> input stream as response to the <code class="docutils literal"><span class="pre">marv.pull</span></code>, which will be assigned to the <code class="docutils literal"><span class="pre">msg</span></code> variable and operation continues within the image node until the next <code class="docutils literal"><span class="pre">yield</span></code> statement or the end of the function.</p>
+</div>
+<div class="section" id="deserialize-raw-message">
+<h3>Deserialize raw message<a class="headerlink" href="#deserialize-raw-message" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-default"><div class="highlight"><pre><span></span>    <span class="c1"># Deserialize raw ros message</span>
+    <span class="n">pytype</span> <span class="o">=</span> <span class="n">get_message_type</span><span class="p">(</span><span class="n">cam</span><span class="p">)</span>
+    <span class="n">rosmsg</span> <span class="o">=</span> <span class="n">pytype</span><span class="p">()</span>
+    <span class="n">rosmsg</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal"><span class="pre">raw_messages</span></code> node pushes raw ROS messages, which have to be deserialized using the correct message type returned by <a class="reference internal" href="../nodes.html#marv_robotics.bag.get_message_type" title="marv_robotics.bag.get_message_type"><code class="xref any py py-func docutils literal"><span class="pre">get_message_type</span></code></a>.</p>
+</div>
+<div class="section" id="write-image-to-file">
+<h3>Write image to file<a class="headerlink" href="#write-image-to-file" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-default"><div class="highlight"><pre><span></span>    <span class="c1"># Write image to jpeg and push it to output stream</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">.jpg&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cam</span><span class="o">.</span><span class="n">topic</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="s1">&#39;:&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">:])</span>
+    <span class="n">imgfile</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">make_file</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+    <span class="n">img</span> <span class="o">=</span> <span class="n">imgmsg_to_cv2</span><span class="p">(</span><span class="n">rosmsg</span><span class="p">,</span> <span class="s2">&quot;rgb8&quot;</span><span class="p">)</span>
+    <span class="n">cv2</span><span class="o">.</span><span class="n">imwrite</span><span class="p">(</span><span class="n">imgfile</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">img</span><span class="p">,</span> <span class="p">(</span><span class="n">cv2</span><span class="o">.</span><span class="n">IMWRITE_JPEG_QUALITY</span><span class="p">,</span> <span class="mi">60</span><span class="p">))</span>
+    <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="n">imgfile</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Define name for the image file and instruct marv to create a file in its store. Then transform the ros image message into an opencv image and save it to the file. Finally, push the file to the output stream for consumers of our image node to pull it.</p>
+<p>Next, we’ll create a detail section that pulls and displays this image.</p>
+</div>
+</div>
+<div class="section" id="show-image-in-detail-section">
+<h2>Show image in detail section<a class="headerlink" href="#show-image-in-detail-section" title="Permalink to this headline">¶</a></h2>
+<p>In order to show an image in a detail section, the section needs to be coded and added to the configuration along with the image node created in the previous section.</p>
+<div class="section" id="code">
+<h3>Code<a class="headerlink" href="#code" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="nd">@marv</span><span class="o">.</span><span class="n">node</span><span class="p">(</span><span class="n">Section</span><span class="p">)</span>
+<span class="nd">@marv</span><span class="o">.</span><span class="n">input</span><span class="p">(</span><span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;Image&#39;</span><span class="p">)</span>
+<span class="nd">@marv</span><span class="o">.</span><span class="n">input</span><span class="p">(</span><span class="s1">&#39;image&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">image_section</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">title</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Create detail section with one image.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        title (str): Title to be displayed for detail section.</span>
+<span class="sd">        image: marv image file.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">        One detail section.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># pull first image</span>
+    <span class="n">img</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">pull</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">img</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span>
+
+    <span class="c1"># create image widget and section containing it</span>
+    <span class="n">widget</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="n">image</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="s1">&#39;image&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;src&#39;</span><span class="p">:</span> <span class="n">img</span><span class="o">.</span><span class="n">relpath</span><span class="p">}}</span>
+    <span class="n">section</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="n">title</span><span class="p">,</span> <span class="s1">&#39;widgets&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">widget</span><span class="p">]}</span>
+    <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="n">section</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal"><span class="pre">image_section</span></code> node’s output stream contains messages of type <code class="docutils literal"><span class="pre">Section</span></code>. It consumes one input parameter <code class="docutils literal"><span class="pre">title</span></code> with a default value of <code class="docutils literal"><span class="pre">Image</span></code> as well as the output stream of the <code class="docutils literal"><span class="pre">image</span></code> node declared previously. In case the <code class="docutils literal"><span class="pre">image</span></code> node did not push any message to its output stream, we simply return, without creating a section.</p>
+<p>Otherwise, a widget of type <code class="docutils literal"><span class="pre">image</span></code> is created and finally a section containing this image is pushed to the output stream.</p>
+<p>Next, we are adding our nodes to the configuration.</p>
+</div>
+<div class="section" id="config">
+<h3>Config<a class="headerlink" href="#config" title="Permalink to this headline">¶</a></h3>
+<p><strong>marv.conf</strong></p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">marv</span><span class="p">]</span>
+<span class="n">collections</span> <span class="o">=</span> <span class="n">bags</span>
+
+<span class="p">[</span><span class="n">collection</span> <span class="n">bags</span><span class="p">]</span>
+<span class="n">scanner</span> <span class="o">=</span> <span class="n">marv_robotics</span><span class="o">.</span><span class="n">bag</span><span class="p">:</span><span class="n">scan</span>
+<span class="n">scanroots</span> <span class="o">=</span>
+    <span class="o">../</span><span class="n">scanroot</span>
+
+<span class="n">nodes</span> <span class="o">=</span>
+    <span class="n">marv_nodes</span><span class="p">:</span><span class="n">dataset</span>
+    <span class="n">marv_robotics</span><span class="o">.</span><span class="n">bag</span><span class="p">:</span><span class="n">bagmeta</span>
+    <span class="n">marv_robotics</span><span class="o">.</span><span class="n">detail</span><span class="p">:</span><span class="n">bagmeta_table</span>
+    <span class="n">marv_robotics</span><span class="o">.</span><span class="n">detail</span><span class="p">:</span><span class="n">topics_section</span>
+<span class="hll">    <span class="n">marv_tutorial</span><span class="p">:</span><span class="n">image</span>
+</span><span class="hll">    <span class="n">marv_tutorial</span><span class="p">:</span><span class="n">image_section</span>
+</span>
+<span class="n">detail_summary_widgets</span> <span class="o">=</span>
+    <span class="n">bagmeta_table</span>
+
+<span class="n">detail_sections</span> <span class="o">=</span>
+    <span class="n">topics_section</span>
+<span class="hll">    <span class="n">image_section</span>
+</span></pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Remember to stop <code class="docutils literal"><span class="pre">uwsgi</span></code>, run <code class="docutils literal"><span class="pre">marv</span> <span class="pre">init</span></code>, and start <code class="docutils literal"><span class="pre">uwsgi</span></code> again.</p>
+</div>
+</div>
+<div class="section" id="run-nodes">
+<h3>Run nodes<a class="headerlink" href="#run-nodes" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(venv:~/site) $</span> marv run --collection<span class="o">=</span>bags
+<span class="go">INFO marv.run qmflhjcp6j.image_section.io4thnkdxx.default (image_section) started</span>
+<span class="go">INFO marv.run qmflhjcp6j.image.og54how3rb.default (image) started</span>
+<span class="go">INFO marv.run qmflhjcp6j.image.og54how3rb.default finished</span>
+<span class="go">INFO marv.run qmflhjcp6j.image_section.io4thnkdxx.default finished</span>
+<span class="go">INFO marv.run vmgpndaq6f.image_section.io4thnkdxx.default (image_section) started</span>
+<span class="go">INFO marv.run vmgpndaq6f.image.og54how3rb.default (image) started</span>
+<span class="go">INFO marv.run vmgpndaq6f.image.og54how3rb.default finished</span>
+<span class="go">INFO marv.run vmgpndaq6f.image_section.io4thnkdxx.default finished</span>
+</pre></div>
+</div>
+<p>Et voilà. Reload your browser (<a class="reference external" href="http://localhost:8000">http://localhost:8000</a>) and you should see the detail section with an image. Let’s extract multiple images!</p>
+</div>
+</div>
+<div class="section" id="display-gallery-of-images">
+<h2>Display gallery of images<a class="headerlink" href="#display-gallery-of-images" title="Permalink to this headline">¶</a></h2>
+<p>To display a gallery of images, we’ll be using another two nodes, again one for extraction and one for the section and add them to the configuration.</p>
+<div class="section" id="id1">
+<h3>Code<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="nd">@marv</span><span class="o">.</span><span class="n">node</span><span class="p">(</span><span class="n">File</span><span class="p">)</span>
+<span class="nd">@marv</span><span class="o">.</span><span class="n">input</span><span class="p">(</span><span class="s1">&#39;cam&#39;</span><span class="p">,</span> <span class="n">marv</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">raw_messages</span><span class="p">,</span> <span class="n">TOPIC</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">images</span><span class="p">(</span><span class="n">cam</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Extract images from input stream to jpg files.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        cam: Input stream of raw rosbag messages.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        File instances for images of input stream.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Set output stream title and pull first message</span>
+    <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">set_header</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="n">cam</span><span class="o">.</span><span class="n">topic</span><span class="p">)</span>
+
+    <span class="c1"># Fetch and process first 20 image messages</span>
+<span class="hll">    <span class="n">name_template</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">-</span><span class="si">{}</span><span class="s1">.jpg&#39;</span> <span class="o">%</span> <span class="n">cam</span><span class="o">.</span><span class="n">topic</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="s1">&#39;:&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">:]</span>
+</span><span class="hll">    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span class="hll">        <span class="n">idx</span><span class="p">,</span> <span class="n">msg</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">pull</span><span class="p">(</span><span class="n">cam</span><span class="p">,</span> <span class="nb">enumerate</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span class="hll">        <span class="k">if</span> <span class="n">msg</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">idx</span> <span class="o">&gt;=</span> <span class="mi">20</span><span class="p">:</span>
+</span><span class="hll">            <span class="k">break</span>
+</span><span class="hll">
+</span><span class="hll">        <span class="c1"># Deserialize raw ros message</span>
+</span>        <span class="n">pytype</span> <span class="o">=</span> <span class="n">get_message_type</span><span class="p">(</span><span class="n">cam</span><span class="p">)</span>
+        <span class="n">rosmsg</span> <span class="o">=</span> <span class="n">pytype</span><span class="p">()</span>
+        <span class="n">rosmsg</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="c1"># Write image to jpeg and push it to output stream</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">imgmsg_to_cv2</span><span class="p">(</span><span class="n">rosmsg</span><span class="p">,</span> <span class="s2">&quot;rgb8&quot;</span><span class="p">)</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">name_template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+        <span class="n">imgfile</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">make_file</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+<span class="hll">        <span class="n">cv2</span><span class="o">.</span><span class="n">imwrite</span><span class="p">(</span><span class="n">imgfile</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">img</span><span class="p">)</span>
+</span>        <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="n">imgfile</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Instead of only the first image, we now want to extract the first 20 images. We are using a <code class="docutils literal"><span class="pre">while</span></code> loop and are breaking if either the input stream is exhausted or 20 images are extracted – <a class="reference internal" href="../api/marv.html#marv.pull.params.enumerate" title="marv.pull"><code class="xref py py-paramref docutils literal"><span class="pre">marv.pull.enumerate</span></code></a> saves us from counting manually. A <code class="docutils literal"><span class="pre">name_template</span></code> together with the index produces unique and meaningful filenames to store the images. All other elements you know already from the <code class="docutils literal"><span class="pre">images</span></code> node above. Let’s create a section to display the images.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="nd">@marv</span><span class="o">.</span><span class="n">node</span><span class="p">(</span><span class="n">Section</span><span class="p">)</span>
+<span class="nd">@marv</span><span class="o">.</span><span class="n">input</span><span class="p">(</span><span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;Gallery&#39;</span><span class="p">)</span>
+<span class="hll"><span class="nd">@marv</span><span class="o">.</span><span class="n">input</span><span class="p">(</span><span class="s1">&#39;images&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">images</span><span class="p">)</span>
+</span><span class="k">def</span> <span class="nf">gallery_section</span><span class="p">(</span><span class="n">images</span><span class="p">,</span> <span class="n">title</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Create detail section with gallery.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        title (str): Title to be displayed for detail section.</span>
+<span class="sd">        images: stream of marv image files</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">        One detail section.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># pull all images</span>
+    <span class="n">imgs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">pull</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">img</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">break</span>
+<span class="hll">        <span class="n">imgs</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s1">&#39;src&#39;</span><span class="p">:</span> <span class="n">img</span><span class="o">.</span><span class="n">relpath</span><span class="p">})</span>
+</span><span class="hll">    <span class="k">if</span> <span class="ow">not</span> <span class="n">imgs</span><span class="p">:</span>
+</span><span class="hll">        <span class="k">return</span>
+</span>
+    <span class="c1"># create gallery widget and section containing it</span>
+<span class="hll">    <span class="n">widget</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="n">images</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="s1">&#39;gallery&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;images&#39;</span><span class="p">:</span> <span class="n">imgs</span><span class="p">}}</span>
+</span>    <span class="n">section</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="n">title</span><span class="p">,</span> <span class="s1">&#39;widgets&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">widget</span><span class="p">]}</span>
+    <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="n">section</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal"><span class="pre">gallery_section</span></code> depends on the just created <code class="docutils literal"><span class="pre">images</span></code> node. To pull all images, it also uses a while loop and while in the <code class="docutils literal"><span class="pre">image_section</span></code> we returned an <code class="docutils literal"><span class="pre">image</span></code> widget, this time we use a <code class="docutils literal"><span class="pre">gallery</span></code> widget with a list of <code class="docutils literal"><span class="pre">images</span></code>. Let’s add the new nodes to the config file and run them. Marv determines which nodes’ output is missing from the store and runs only these. By default it checks all nodes being listed in <code class="docutils literal"><span class="pre">detail_summary_widgets</span></code> and <code class="docutils literal"><span class="pre">detail_sections</span></code>. Actually, there are two more config keys, but they will be part of a future tutorial. Dependencies will be automatically added as needed.</p>
+</div>
+<div class="section" id="id2">
+<h3>Config<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">marv</span><span class="p">]</span>
+<span class="n">collections</span> <span class="o">=</span> <span class="n">bags</span>
+
+<span class="p">[</span><span class="n">collection</span> <span class="n">bags</span><span class="p">]</span>
+<span class="n">scanner</span> <span class="o">=</span> <span class="n">marv_robotics</span><span class="o">.</span><span class="n">bag</span><span class="p">:</span><span class="n">scan</span>
+<span class="n">scanroots</span> <span class="o">=</span>
+    <span class="o">../</span><span class="n">scanroot</span>
+
+<span class="n">nodes</span> <span class="o">=</span>
+    <span class="n">marv_nodes</span><span class="p">:</span><span class="n">dataset</span>
+    <span class="n">marv_robotics</span><span class="o">.</span><span class="n">bag</span><span class="p">:</span><span class="n">bagmeta</span>
+    <span class="n">marv_robotics</span><span class="o">.</span><span class="n">detail</span><span class="p">:</span><span class="n">bagmeta_table</span>
+    <span class="n">marv_robotics</span><span class="o">.</span><span class="n">detail</span><span class="p">:</span><span class="n">topics_section</span>
+    <span class="n">marv_tutorial</span><span class="p">:</span><span class="n">image</span>
+    <span class="n">marv_tutorial</span><span class="p">:</span><span class="n">image_section</span>
+<span class="hll">    <span class="n">marv_tutorial</span><span class="p">:</span><span class="n">images</span>
+</span><span class="hll">    <span class="n">marv_tutorial</span><span class="p">:</span><span class="n">gallery_section</span>
+</span>
+<span class="n">detail_summary_widgets</span> <span class="o">=</span>
+    <span class="n">bagmeta_table</span>
+
+<span class="n">detail_sections</span> <span class="o">=</span>
+    <span class="n">topics_section</span>
+    <span class="n">image_section</span>
+<span class="hll">    <span class="n">gallery_section</span>
+</span></pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Remember to stop <code class="docutils literal"><span class="pre">uwsgi</span></code>, run <code class="docutils literal"><span class="pre">marv</span> <span class="pre">init</span></code>, and start <code class="docutils literal"><span class="pre">uwsgi</span></code> again.</p>
+</div>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(venv:~/site) $</span> marv run --collection<span class="o">=</span>bags
+<span class="go">INFO marv.run qmflhjcp6j.gallery_section.oamfub7jpa.default (gallery_section) started</span>
+<span class="go">INFO marv.run qmflhjcp6j.images.og54how3rb.default (images) started</span>
+<span class="go">INFO marv.run qmflhjcp6j.images.og54how3rb.default finished</span>
+<span class="go">INFO marv.run qmflhjcp6j.gallery_section.oamfub7jpa.default finished</span>
+<span class="go">INFO marv.run vmgpndaq6f.gallery_section.oamfub7jpa.default (gallery_section) started</span>
+<span class="go">INFO marv.run vmgpndaq6f.images.og54how3rb.default (images) started</span>
+<span class="go">INFO marv.run vmgpndaq6f.images.og54how3rb.default finished</span>
+<span class="go">INFO marv.run vmgpndaq6f.gallery_section.oamfub7jpa.default finished</span>
+</pre></div>
+</div>
+<p>Et voilà. Reload your browser (<a class="reference external" href="http://localhost:8000">http://localhost:8000</a>) and you should see the gallery section.</p>
+<p>Let’s move to the final piece of this tutorial: a section combining multiple widgets and introducing two more widget types: tables and plots.</p>
+</div>
+</div>
+<div class="section" id="combined-table-plot-and-gallery">
+<h2>Combined: table, plot and gallery<a class="headerlink" href="#combined-table-plot-and-gallery" title="Permalink to this headline">¶</a></h2>
+<p>In the final section we want to display a table that lists name and size of the image files, a plot of the filesizes, and again the gallery. To this end we create a stream of filesizes, the plot and the combined section:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="hll"><span class="nd">@marv</span><span class="o">.</span><span class="n">node</span><span class="p">()</span>
+</span><span class="nd">@marv</span><span class="o">.</span><span class="n">input</span><span class="p">(</span><span class="s1">&#39;images&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">images</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">filesizes</span><span class="p">(</span><span class="n">images</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Stat filesize of files.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        images: stream of marv image files</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Stream of filesizes</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Pull each image and push its filesize</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">pull</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">img</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>“Computing” the filesizes is so cheap, that we do not want to store the node’s output and therefore don’t need to specify a schema and are able to return arbitrary python objects (more on this later).</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="nd">@marv</span><span class="o">.</span><span class="n">node</span><span class="p">(</span><span class="n">Widget</span><span class="p">)</span>
+<span class="nd">@marv</span><span class="o">.</span><span class="n">input</span><span class="p">(</span><span class="s1">&#39;filesizes&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">filesizes</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">filesize_plot</span><span class="p">(</span><span class="n">filesizes</span><span class="p">):</span>
+    <span class="c1"># Pull all filesizes</span>
+    <span class="n">sizes</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">size</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">pull</span><span class="p">(</span><span class="n">filesizes</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="n">sizes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
+
+    <span class="c1"># plot</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+    <span class="n">axis</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">axis</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">sizes</span><span class="p">,</span> <span class="s1">&#39;bo&#39;</span><span class="p">)</span>
+
+    <span class="c1"># EE: save figure to file</span>
+    <span class="n">plotfile</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">make_file</span><span class="p">(</span><span class="s1">&#39;filesizes.json&#39;</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">plotfile</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">mpld3</span><span class="o">.</span><span class="n">fig_to_dict</span><span class="p">(</span><span class="n">fig</span><span class="p">),</span> <span class="n">f</span><span class="p">)</span>
+
+    <span class="c1"># EE: create plot widget referencing file</span>
+    <span class="n">widget</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;Filesizes&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;mpld3&#39;</span><span class="p">:</span> <span class="s1">&#39;marv-partial:</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">plotfile</span><span class="o">.</span><span class="n">relpath</span><span class="p">),</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Alternative code for community edition</span>
+    <span class="c1">#plotfile = yield marv.make_file(&#39;filesizes.jpg&#39;)</span>
+    <span class="c1">#fig.savefig(plotfile.path)</span>
+    <span class="c1">#widget = {</span>
+    <span class="c1">#    &#39;title&#39;: &#39;Filesizes&#39;,</span>
+    <span class="c1">#    &#39;image&#39;: {&#39;src&#39;: plotfile.relpath},</span>
+    <span class="c1">#}</span>
+
+    <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="n">widget</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>We use <a class="reference external" href="https://matplotlib.org/">matplotlib</a> to create plots and <a class="reference external" href="http://mpld3.github.io/">mpld3</a> for serialization to a file and visualization in the browser (EE-only, for CE use the image widget, see above). The file is referenced by the <code class="docutils literal"><span class="pre">mpld3</span></code> widget using <code class="docutils literal"><span class="pre">marv-partial</span></code>. This reduces the size of the detail view as the plot data is only loaded once the contents of the section referencing it are displayed. An alternative would be to embed the plot data directlt into the plot. This is the only mode of operation for the <code class="docutils literal"><span class="pre">mpld3</span></code> widget and it is the only widget supporting this feature so far.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="nd">@marv</span><span class="o">.</span><span class="n">node</span><span class="p">(</span><span class="n">Section</span><span class="p">)</span>
+<span class="nd">@marv</span><span class="o">.</span><span class="n">input</span><span class="p">(</span><span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;Combined&#39;</span><span class="p">)</span>
+<span class="nd">@marv</span><span class="o">.</span><span class="n">input</span><span class="p">(</span><span class="s1">&#39;images&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">images</span><span class="p">)</span>
+<span class="nd">@marv</span><span class="o">.</span><span class="n">input</span><span class="p">(</span><span class="s1">&#39;filesizes&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">filesizes</span><span class="p">)</span>
+<span class="nd">@marv</span><span class="o">.</span><span class="n">input</span><span class="p">(</span><span class="s1">&#39;filesize_plot&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">filesize_plot</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">combined_section</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">images</span><span class="p">,</span> <span class="n">filesizes</span><span class="p">,</span> <span class="n">filesize_plot</span><span class="p">):</span>
+    <span class="c1"># A gallery of images</span>
+    <span class="n">imgs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">gallery</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="n">images</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="s1">&#39;gallery&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;images&#39;</span><span class="p">:</span> <span class="n">imgs</span><span class="p">}}</span>
+
+    <span class="c1"># A table with two columns</span>
+<span class="hll">    <span class="n">rows</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span class="hll">    <span class="n">columns</span> <span class="o">=</span> <span class="p">[{</span><span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;Name&#39;</span><span class="p">,</span> <span class="s1">&#39;formatter&#39;</span><span class="p">:</span> <span class="s1">&#39;rellink&#39;</span><span class="p">},</span>
+</span><span class="hll">               <span class="p">{</span><span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;Size&#39;</span><span class="p">,</span> <span class="s1">&#39;formatter&#39;</span><span class="p">:</span> <span class="s1">&#39;filesize&#39;</span><span class="p">}]</span>
+</span><span class="hll">    <span class="n">table</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;table&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;columns&#39;</span><span class="p">:</span> <span class="n">columns</span><span class="p">,</span> <span class="s1">&#39;rows&#39;</span><span class="p">:</span> <span class="n">rows</span><span class="p">}}</span>
+</span>
+    <span class="c1"># pull images and filesizes synchronously</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">img</span><span class="p">,</span> <span class="n">filesize</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">pull_all</span><span class="p">(</span><span class="n">images</span><span class="p">,</span> <span class="n">filesizes</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">img</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="n">imgs</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s1">&#39;src&#39;</span><span class="p">:</span> <span class="n">img</span><span class="o">.</span><span class="n">relpath</span><span class="p">})</span>
+<span class="hll">        <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s1">&#39;cells&#39;</span><span class="p">:</span> <span class="p">[</span>
+</span><span class="hll">            <span class="p">{</span><span class="s1">&#39;link&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;href&#39;</span><span class="p">:</span> <span class="n">img</span><span class="o">.</span><span class="n">relpath</span><span class="p">,</span>
+</span><span class="hll">                      <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">relpath</span><span class="p">)}},</span>
+</span><span class="hll">            <span class="p">{</span><span class="s1">&#39;uint64&#39;</span><span class="p">:</span> <span class="n">filesize</span><span class="p">},</span>
+</span><span class="hll">        <span class="p">]})</span>
+</span>
+    <span class="c1"># pull filesize_plot AFTER individual messages</span>
+    <span class="n">plot</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">pull</span><span class="p">(</span><span class="n">filesize_plot</span><span class="p">)</span>
+
+    <span class="c1"># section containing multiple widgets</span>
+<span class="hll">    <span class="n">section</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="n">title</span><span class="p">,</span> <span class="s1">&#39;widgets&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">table</span><span class="p">,</span> <span class="n">plot</span><span class="p">,</span> <span class="n">gallery</span><span class="p">]}</span>
+</span>    <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="n">section</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>New is the <code class="docutils literal"><span class="pre">table</span></code> widget here, defined by <code class="docutils literal"><span class="pre">rows</span></code> and <code class="docutils literal"><span class="pre">columns</span></code>. The columns have title to be displayed for the column as well as a formatter that is responsible to display the content of each cell of a column. A row has <code class="docutils literal"><span class="pre">cells</span></code>, which is a list of values being formatted by the formatters.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">marv</span><span class="p">]</span>
+<span class="n">collections</span> <span class="o">=</span> <span class="n">bags</span>
+
+<span class="p">[</span><span class="n">collection</span> <span class="n">bags</span><span class="p">]</span>
+<span class="n">scanner</span> <span class="o">=</span> <span class="n">marv_robotics</span><span class="o">.</span><span class="n">bag</span><span class="p">:</span><span class="n">scan</span>
+<span class="n">scanroots</span> <span class="o">=</span>
+    <span class="o">../</span><span class="n">scanroot</span>
+
+<span class="n">nodes</span> <span class="o">=</span>
+    <span class="n">marv_nodes</span><span class="p">:</span><span class="n">dataset</span>
+    <span class="n">marv_robotics</span><span class="o">.</span><span class="n">bag</span><span class="p">:</span><span class="n">bagmeta</span>
+    <span class="n">marv_robotics</span><span class="o">.</span><span class="n">detail</span><span class="p">:</span><span class="n">bagmeta_table</span>
+    <span class="n">marv_robotics</span><span class="o">.</span><span class="n">detail</span><span class="p">:</span><span class="n">topics_section</span>
+    <span class="n">marv_tutorial</span><span class="p">:</span><span class="n">image</span>
+    <span class="n">marv_tutorial</span><span class="p">:</span><span class="n">image_section</span>
+    <span class="n">marv_tutorial</span><span class="p">:</span><span class="n">images</span>
+    <span class="n">marv_tutorial</span><span class="p">:</span><span class="n">gallery_section</span>
+<span class="hll">    <span class="n">marv_tutorial</span><span class="p">:</span><span class="n">combined_section</span>
+</span>
+<span class="n">detail_summary_widgets</span> <span class="o">=</span>
+    <span class="n">bagmeta_table</span>
+
+<span class="n">detail_sections</span> <span class="o">=</span>
+    <span class="n">topics_section</span>
+    <span class="n">image_section</span>
+    <span class="n">gallery_section</span>
+<span class="hll">    <span class="n">combined_section</span>
+</span></pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Remember to stop <code class="docutils literal"><span class="pre">uwsgi</span></code>, run <code class="docutils literal"><span class="pre">marv</span> <span class="pre">init</span></code>, and start <code class="docutils literal"><span class="pre">uwsgi</span></code> again.</p>
+</div>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> marv run --collection<span class="o">=</span>bags
+<span class="go">INFO marv.run qmflhjcp6j.combined_section.ft6zlxpbvn.default (combined_section) started</span>
+<span class="go">ERRO marv.cli Exception occured for SetID(&#39;qmflhjcp6j3hsq7e56xzktf3yq&#39;):</span>
+<span class="go">Traceback (most recent call last):</span>
+<span class="go">...</span>
+<span class="go">marv_node.driver.MakeFileNotSupported: &lt;VolatileStream qmflhjcp6j.filesize_plot.cpenbxihfq.default&gt;</span>
+</pre></div>
+</div>
+<p>There was an error: The <code class="docutils literal"><span class="pre">filesize_plot</span></code> requested to make a file, but marv failed to follow through. Nodes can be persistent or volatile. Persistent nodes are stored in marv’s store, need to declare a schema (i.e. <code class="docutils literal"><span class="pre">Section</span></code> or <code class="docutils literal"><span class="pre">Widget</span></code>) and be listed in <code class="docutils literal"><span class="pre">marv.conf</span></code>. Volatile nodes need none of that and are run every time somebody needs them. The <code class="docutils literal"><span class="pre">filesize</span></code> node for example is cheap to run, even pointless beyond the scope of a tutorial, and therefore volatile: not listed in <code class="docutils literal"><span class="pre">marv.conf</span></code> and declaring no schema, just <code class="docutils literal"><span class="pre">&#64;marv.node()</span></code>.</p>
+<p>For nodes to be able to make files, they need to be persistent. We forgot to add <code class="docutils literal"><span class="pre">filesize_plot</span></code> to <code class="docutils literal"><span class="pre">marv.conf</span></code>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">marv</span><span class="p">]</span>
+<span class="n">collections</span> <span class="o">=</span> <span class="n">bags</span>
+
+<span class="p">[</span><span class="n">collection</span> <span class="n">bags</span><span class="p">]</span>
+<span class="n">scanner</span> <span class="o">=</span> <span class="n">marv_robotics</span><span class="o">.</span><span class="n">bag</span><span class="p">:</span><span class="n">scan</span>
+<span class="n">scanroots</span> <span class="o">=</span>
+    <span class="o">../</span><span class="n">scanroot</span>
+
+<span class="n">nodes</span> <span class="o">=</span>
+    <span class="n">marv_nodes</span><span class="p">:</span><span class="n">dataset</span>
+    <span class="n">marv_robotics</span><span class="o">.</span><span class="n">bag</span><span class="p">:</span><span class="n">bagmeta</span>
+    <span class="n">marv_robotics</span><span class="o">.</span><span class="n">detail</span><span class="p">:</span><span class="n">bagmeta_table</span>
+    <span class="n">marv_robotics</span><span class="o">.</span><span class="n">detail</span><span class="p">:</span><span class="n">topics_section</span>
+    <span class="n">marv_tutorial</span><span class="p">:</span><span class="n">image</span>
+    <span class="n">marv_tutorial</span><span class="p">:</span><span class="n">image_section</span>
+    <span class="n">marv_tutorial</span><span class="p">:</span><span class="n">images</span>
+    <span class="n">marv_tutorial</span><span class="p">:</span><span class="n">gallery_section</span>
+<span class="hll">    <span class="n">marv_tutorial</span><span class="p">:</span><span class="n">filesize_plot</span>
+</span>    <span class="n">marv_tutorial</span><span class="p">:</span><span class="n">combined_section</span>
+
+<span class="n">detail_summary_widgets</span> <span class="o">=</span>
+    <span class="n">bagmeta_table</span>
+
+<span class="n">detail_sections</span> <span class="o">=</span>
+    <span class="n">topics_section</span>
+    <span class="n">image_section</span>
+    <span class="n">gallery_section</span>
+    <span class="n">combined_section</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Remember to stop <code class="docutils literal"><span class="pre">uwsgi</span></code>, run <code class="docutils literal"><span class="pre">marv</span> <span class="pre">init</span></code>, and start <code class="docutils literal"><span class="pre">uwsgi</span></code> again.</p>
+</div>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> marv run --collection<span class="o">=</span>bags
+<span class="go">INFO marv.run qmflhjcp6j.combined_section.ft6zlxpbvn.default (combined_section) started</span>
+<span class="go">INFO marv.run qmflhjcp6j.filesize_plot.cpenbxihfq.default (filesize_plot) started</span>
+<span class="go">INFO marv.run qmflhjcp6j.filesize_plot.cpenbxihfq.default finished</span>
+<span class="go">INFO marv.run qmflhjcp6j.combined_section.ft6zlxpbvn.default finished</span>
+<span class="go">INFO marv.run vmgpndaq6f.bagmeta_table.gahvdc4vpg.default (bagmeta_table) started</span>
+<span class="go">INFO marv.run vmgpndaq6f.combined_section.ft6zlxpbvn.default (combined_section) started</span>
+<span class="go">INFO marv.run vmgpndaq6f.gallery_section.oamfub7jpa.default (gallery_section) started</span>
+<span class="go">INFO marv.run vmgpndaq6f.image_section.io4thnkdxx.default (image_section) started</span>
+<span class="go">INFO marv.run vmgpndaq6f.topics_section.yjrewalqzc.default (topics_section) started</span>
+<span class="go">INFO marv.run vmgpndaq6f.bagmeta.dwz4xbykdt.default (bagmeta) started</span>
+<span class="go">INFO marv.run vmgpndaq6f.filesize_plot.cpenbxihfq.default (filesize_plot) started</span>
+<span class="go">INFO marv.run vmgpndaq6f.images.og54how3rb.default (images) started</span>
+<span class="go">INFO marv.run vmgpndaq6f.image.og54how3rb.default (image) started</span>
+<span class="go">INFO marv.run vmgpndaq6f.bagmeta.dwz4xbykdt.default finished</span>
+<span class="go">INFO marv.run vmgpndaq6f.topics_section.yjrewalqzc.default finished</span>
+<span class="go">INFO marv.run vmgpndaq6f.bagmeta_table.gahvdc4vpg.default finished</span>
+<span class="go">INFO marv.run vmgpndaq6f.image.og54how3rb.default finished</span>
+<span class="go">INFO marv.run vmgpndaq6f.image_section.io4thnkdxx.default finished</span>
+<span class="go">INFO marv.run vmgpndaq6f.images.og54how3rb.default finished</span>
+<span class="go">INFO marv.run vmgpndaq6f.gallery_section.oamfub7jpa.default finished</span>
+<span class="go">INFO marv.run vmgpndaq6f.filesize_plot.cpenbxihfq.default finished</span>
+<span class="go">INFO marv.run vmgpndaq6f.combined_section.ft6zlxpbvn.default finished</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Permalink to this headline">¶</a></h2>
+<p>You learned to create a python package and wrote your first nodes to extract images, create a plot and table, and display these in detail sections.</p>
+<p>Happy coding!</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Tutorial: Write your own nodes</a><ul>
+<li><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li><a class="reference internal" href="#create-python-package">Create python package</a></li>
+<li><a class="reference internal" href="#first-node-extract-an-image">First node: Extract an image</a><ul>
+<li><a class="reference internal" href="#declare-image-node">Declare image node</a></li>
+<li><a class="reference internal" href="#yield-to-interact-with-marv">Yield to interact with marv</a></li>
+<li><a class="reference internal" href="#deserialize-raw-message">Deserialize raw message</a></li>
+<li><a class="reference internal" href="#write-image-to-file">Write image to file</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#show-image-in-detail-section">Show image in detail section</a><ul>
+<li><a class="reference internal" href="#code">Code</a></li>
+<li><a class="reference internal" href="#config">Config</a></li>
+<li><a class="reference internal" href="#run-nodes">Run nodes</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#display-gallery-of-images">Display gallery of images</a><ul>
+<li><a class="reference internal" href="#id1">Code</a></li>
+<li><a class="reference internal" href="#id2">Config</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#combined-table-plot-and-gallery">Combined: table, plot and gallery</a></li>
+<li><a class="reference internal" href="#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="setup-basic-site.html" title="previous chapter">Tutorial: Setup basic site</a></li>
+      <li>Next: <a href="../debug.html" title="next chapter">Debugging</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/tutorial/write-your-own.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016-2018, Ternaris.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="../_sources/tutorial/write-your-own.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

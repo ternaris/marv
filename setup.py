@@ -28,7 +28,7 @@ with open(os.path.join(HERE, 'README.rst')) as f:
     README = f.read()
 
 setup(name='marv',
-      version='3.0.0',
+      version='3.1.0',
       description='MARV framework',
       long_description=README,
       classifiers=[
@@ -53,6 +53,7 @@ setup(name='marv',
           'marv.tests',
           'marv_detail',
           'marv_node',
+          'marv_node.testing',
           'marv_node.tests',
           'marv_nodes',
           'marv_pycapnp',

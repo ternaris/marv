@@ -1,0 +1,315 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>marv &#8212; MARV 3.1.0 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/sphinx_paramlinks.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '3.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Migration" href="../migrate/index.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="marv">
+<h1>marv<a class="headerlink" href="#marv" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-marv.scanner">
+<span id="creating-datasets"></span><h2>Creating datasets<a class="headerlink" href="#module-marv.scanner" title="Permalink to this headline">¶</a></h2>
+<p>Datasets are created based on information provided by scanners.  A
+scanner is responsible to group files into named datasets:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">scan</span><span class="p">(</span><span class="n">dirpath</span><span class="p">,</span> <span class="n">dirnames</span><span class="p">,</span> <span class="n">filenames</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">DatasetInfo</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="p">[</span><span class="n">x</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">filenames</span>
+            <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.csv&#39;</span><span class="p">)]</span>
+</pre></div>
+</div>
+<p>Scanners are called for every directory within the configured
+scanroots, while files and directories starting with a <code class="docutils literal"><span class="pre">.</span></code> and
+directories containing an (empty) <code class="docutils literal"><span class="pre">.marvignore</span></code> file are ignored and
+will not be traversed into.</p>
+<p>Further, traversal into subdirectories can be controlled by
+altering the <code class="xref py py-paramref docutils literal"><span class="pre">dirnames</span></code> list in-place. To block further
+traversal, e.g. for a directory-based dataset type, set it to an
+empty list – <a class="reference external" href="https://docs.python.org/2.7/library/os.html#os.walk" title="(in Python v2.7)"><code class="xref py py-func docutils literal"><span class="pre">os.walk()</span></code></a> is used behind the scenes:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">dirnames</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">[]</span>
+</pre></div>
+</div>
+<dl class="class">
+<dt id="marv.scanner.DatasetInfo">
+<em class="property">class </em><code class="descclassname">marv.scanner.</code><code class="descname">DatasetInfo</code><span class="sig-paren">(</span><em>name</em>, <em>files</em><span class="sig-paren">)</span><a class="headerlink" href="#marv.scanner.DatasetInfo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">tuple</span></code></p>
+<dl class="attribute">
+<dt id="marv.scanner.DatasetInfo.files">
+<code class="descname">files</code><a class="headerlink" href="#marv.scanner.DatasetInfo.files" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="marv.scanner.DatasetInfo.name">
+<code class="descname">name</code><a class="headerlink" href="#marv.scanner.DatasetInfo.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-marv">
+<span id="declaring-nodes"></span><h2>Declaring nodes<a class="headerlink" href="#module-marv" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="marv.node">
+<code class="descclassname">marv.</code><code class="descname">node</code><span class="sig-paren">(</span><em>schema=None</em>, <em>header=None</em>, <em>group=None</em>, <em>version=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marv_node/node.html#node"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marv.node" title="Permalink to this definition">¶</a></dt>
+<dd><p>Turn function into node.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><span class="target" id="marv.node.params.schema"></span><strong>schema</strong><a class="paramlink headerlink reference internal" href="#marv.node.params.schema">¶</a> – capnproto schema describing the output messages format</li>
+<li><span class="target" id="marv.node.params.header"></span><strong>header</strong><a class="paramlink headerlink reference internal" href="#marv.node.params.header">¶</a> – This parameter is currently not supported and only for
+internal usage.</li>
+<li><span class="target" id="marv.node.params.group"></span><strong>group</strong><a class="paramlink headerlink reference internal" href="#marv.node.params.group">¶</a> – A boolean indicating whether the default stream
+of the node is a group, meaning it will be used to
+published handles for streams or further groups. In case
+of <a class="reference internal" href="#marv.input.params.foreach" title="marv.input"><code class="xref py py-paramref docutils literal"><span class="pre">marv.input.foreach</span></code></a> specifications this flag will
+default to <cite>True</cite>. This parameter is currently only for
+internal usage.</li>
+<li><span class="target" id="marv.node.params.version"></span><strong>version</strong><a class="paramlink headerlink reference internal" href="#marv.node.params.version">¶</a> – This parameter currently has no effect.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A <code class="xref py py-class docutils literal"><span class="pre">Node</span></code> instance according to the given
+arguments and <a class="reference internal" href="#marv.input" title="marv.input"><code class="xref py py-func docutils literal"><span class="pre">input()</span></code></a> decorators.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="marv.input">
+<code class="descclassname">marv.</code><code class="descname">input</code><span class="sig-paren">(</span><em>name</em>, <em>default=None</em>, <em>foreach=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marv_node/node.html#input"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marv.input" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decorator to declare input for a node.</p>
+<p>Plain inputs, that is plain python objects, are directly passed to
+the node. Whereas streams generated by other nodes are requested
+and once the handles of all input streams are available the node
+is instantiated.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><span class="target" id="marv.input.params.name"></span><strong>name</strong><a class="paramlink headerlink reference internal" href="#marv.input.params.name">¶</a> – Name of the node function argument the input will
+be passed to.</li>
+<li><span class="target" id="marv.input.params.default"></span><strong>default</strong><a class="paramlink headerlink reference internal" href="#marv.input.params.default">¶</a> – An optional default value for the input. This can be
+any python object or another node.</li>
+<li><span class="target" id="marv.input.params.foreach"></span><strong>foreach</strong><a class="paramlink headerlink reference internal" href="#marv.input.params.foreach">¶</a> – This parameter is currently not supported and
+only for internal usage.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">The original function decorated with this input
+specification. A function is turned into a node by the
+<a class="reference internal" href="#marv.node" title="marv.node"><code class="xref py py-func docutils literal"><span class="pre">node()</span></code></a> decorator.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-marv">
+<span id="interacting-with-marv"></span><h2>Interacting with marv<a class="headerlink" href="#module-marv" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="marv.create_group">
+<code class="descclassname">marv.</code><code class="descname">create_group</code><span class="sig-paren">(</span><em>name</em>, <em>**header</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marv_node/io.html#create_group"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marv.create_group" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="marv.create_stream">
+<code class="descclassname">marv.</code><code class="descname">create_stream</code><span class="sig-paren">(</span><em>name</em>, <em>**header</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marv_node/io.html#create_stream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marv.create_stream" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a stream for publishing messages.</p>
+<p>All keyword arguments will be used to form the header.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="marv.get_logger">
+<code class="descclassname">marv.</code><code class="descname">get_logger</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marv_node/io.html#get_logger"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marv.get_logger" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="marv.get_stream">
+<code class="descclassname">marv.</code><code class="descname">get_stream</code><span class="sig-paren">(</span><em>node</em>, <em>name='default'</em>, <em>setid=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marv_node/io.html#get_stream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marv.get_stream" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="marv.make_file">
+<code class="descclassname">marv.</code><code class="descname">make_file</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marv_node/io.html#make_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marv.make_file" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="marv.pull">
+<code class="descclassname">marv.</code><code class="descname">pull</code><span class="sig-paren">(</span><em>handle</em>, <em>enumerate=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marv_node/io.html#pull"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marv.pull" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pulls next message for handle.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><span class="target" id="marv.pull.params.handle"></span><strong>handle</strong><a class="paramlink headerlink reference internal" href="#marv.pull.params.handle">¶</a> – A <code class="xref py py-class docutils literal"><span class="pre">stream.Handle</span></code> or GroupHandle.</li>
+<li><span class="target" id="marv.pull.params.enumerate"></span><strong>enumerate</strong><a class="paramlink headerlink reference internal" href="#marv.pull.params.enumerate">¶</a> – boolean to indicate whether a tuple <code class="docutils literal"><span class="pre">(idx,</span> <span class="pre">msg)</span></code>
+should be returned, not unlike Python’s enumerate().</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A <code class="xref py py-class docutils literal"><span class="pre">Pull</span></code> task to be yielded. Marv will send the
+corresponding message as soon as it is available. For groups
+this message will be a handle to a member of the
+group. Members of groups are either streams or groups.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<p>Pulling (enumerated) message from stream:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">msg</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">pull</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
+<span class="n">idx</span><span class="p">,</span> <span class="n">msg</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">pull</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="nb">enumerate</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Pulling stream from group and message from stream:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">stream</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">pull</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>  <span class="c1"># a group of streams</span>
+<span class="n">msg</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">pull</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="marv.pull_all">
+<code class="descclassname">marv.</code><code class="descname">pull_all</code><span class="sig-paren">(</span><em>*handles</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marv_node/io.html#pull_all"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marv.pull_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pulls next message of all handles.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="marv.push">
+<code class="descclassname">marv.</code><code class="descname">push</code><span class="sig-paren">(</span><em>msg</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marv_node/io.html#push"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marv.push" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="marv.select">
+<code class="descclassname">marv.</code><code class="descname">select</code><span class="sig-paren">(</span><em>node</em>, <em>name</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marv_node/tools.html#select"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marv.select" title="Permalink to this definition">¶</a></dt>
+<dd><p>Select specific stream of a node by name.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><span class="target" id="marv.select.params.node"></span><strong>node</strong><a class="paramlink headerlink reference internal" href="#marv.select.params.node">¶</a> – A node producing a group of streams.</li>
+<li><span class="target" id="marv.select.params.name"></span><strong>name</strong><a class="paramlink headerlink reference internal" href="#marv.select.params.name">¶</a> – Name of stream to select.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Node outputting selected stream.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="marv.set_header">
+<code class="descclassname">marv.</code><code class="descname">set_header</code><span class="sig-paren">(</span><em>**header</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marv_node/io.html#set_header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marv.set_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the header of a stream or group.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">marv</a><ul>
+<li><a class="reference internal" href="#module-marv.scanner">Creating datasets</a></li>
+<li><a class="reference internal" href="#module-marv">Declaring nodes</a></li>
+<li><a class="reference internal" href="#module-marv">Interacting with marv</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="../migrate/index.html" title="previous chapter">Migration</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/api/marv.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016-2018, Ternaris.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="../_sources/api/marv.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

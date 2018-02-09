@@ -1,0 +1,214 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Migration &#8212; MARV 3.1.0 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/sphinx_paramlinks.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '3.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="marv" href="../api/marv.html" />
+    <link rel="prev" title="Maintenance" href="../maintenance.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="migration">
+<span id="migrate"></span><h1>Migration<a class="headerlink" href="#migration" title="Permalink to this headline">¶</a></h1>
+<p>Before doing any migration you might want to check the <a class="reference internal" href="../config.html#config"><span class="std std-ref">Configuration</span></a> and <a class="reference internal" href="../deploy.html#deploy"><span class="std std-ref">Deployment</span></a> sections.</p>
+<div class="section" id="id1">
+<h2>17.11 -&gt; 18.02<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>With this release:</p>
+<ul class="simple">
+<li>message definitions are read from bag files instead of being expected on the system</li>
+<li>marv allows mixing message types per topic.</li>
+</ul>
+<p>As part of this the topics section has been renamed to <code class="docutils literal"><span class="pre">connections_section</span></code> and the <code class="docutils literal"><span class="pre">bagmeta</span></code> node has changed a bit. Please update your configuration along the lines of:</p>
+<div class="highlight-diff"><div class="highlight"><pre><span></span><span class="gh">diff --git a/docs/config/marv.conf b/docs/config/marv.conf</span>
+<span class="gh">index 0e44b19..31dfe57 100644</span>
+<span class="gd">--- a/docs/config/marv.conf</span>
+<span class="gi">+++ b/docs/config/marv.conf</span>
+<span class="gu">@@ -24,7 +24,7 @@ nodes =</span>
+     marv_robotics.detail:summary_keyval
+     marv_robotics.detail:bagmeta_table
+     # detail sections
+<span class="gd">-    marv_robotics.detail:topics_section</span>
+<span class="gi">+    marv_robotics.detail:connections_section</span>
+     marv_robotics.detail:images_section
+     marv_robotics.detail:video_section
+     marv_robotics.detail:gnss_section
+<span class="gu">@@ -43,8 +43,8 @@ filters =</span>
+     start_time | Start time    | lt le eq ne ge gt | datetime   | (get &quot;bagmeta.start_time&quot;)
+     end_time   | End time      | lt le eq ne ge gt | datetime   | (get &quot;bagmeta.end_time&quot;)
+     duration   | Duration      | lt le eq ne ge gt | timedelta  | (get &quot;bagmeta.duration&quot;)
+<span class="gd">-    topics     | Topics        | any all           | subset     | (get &quot;bagmeta.topics[:].name&quot;)</span>
+<span class="gd">-    msg_types  | Message types | any all           | subset     | (get &quot;bagmeta.msg_types[:].name&quot;)</span>
+<span class="gi">+    topics     | Topics        | any all           | subset     | (get &quot;bagmeta.topics&quot;)</span>
+<span class="gi">+    msg_types  | Message types | any all           | subset     | (get &quot;bagmeta.msg_types&quot;)</span>
+ 
+ listing_columns =
+     # id       | Heading    | formatter | value function
+<span class="gu">@@ -69,7 +69,7 @@ detail_summary_widgets =</span>
+     bagmeta_table
+ 
+ detail_sections =
+<span class="gd">-    topics_section</span>
+<span class="gi">+    connections_section</span>
+     images_section
+     video_section
+     gnss_section
+</pre></div>
+</div>
+<p>And then rerun the bagmeta node and the new connections section.</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="go">marv run --node bagmeta --node connections_section --force --collection=*</span>
+</pre></div>
+</div>
+<p>Now, nodes can be run, that were previously missing message type definitions. <code class="docutils literal"><span class="pre">gnss_plots</span></code> for example works differently, if it cannot find navsat orientations. To rerun it and all nodes depending on it:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="go">marv run --node gnss_plots --force --force-dependant --collection=*</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id2">
+<h2>16.10 -&gt; 17.11<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<p>In the old site:</p>
+<ol class="arabic">
+<li><p class="first"><strong>Make sure you have a backup of your old site!</strong></p>
+</li>
+<li><p class="first">Dump database of old marv:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="go">curl -LO https://gist.githubusercontent.com/chaoflow/02a1be706cf4948a9f4d7f1fd66d6c73/raw/de4feab88bcfa756abfb6c7f5a8ccaef7f25b36d/marv-16.10-dump.py</span>
+<span class="go">python2 marv-16.10-dump.py &gt; /tmp/dump.json</span>
+</pre></div>
+</div>
+</li>
+</ol>
+<p>For and in the new instance:</p>
+<ol class="arabic" start="3">
+<li><p class="first">Follow <a class="reference internal" href="../install.html#install"><span class="std std-ref">Installation</span></a> and <a class="reference internal" href="../tutorial/setup-basic-site.html#setup-basic-site"><span class="std std-ref">Tutorial: Setup basic site</span></a> to setup a basic site.</p>
+</li>
+<li><p class="first">Replace <code class="docutils literal"><span class="pre">marv.conf</span></code> with the default <a class="reference internal" href="../config.html#config"><span class="std std-ref">Configuration</span></a> and adjust as needed (e.g. scanroot).</p>
+</li>
+<li><p class="first">Initialize site with new configuration:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="go">marv init</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">If your scanroot has moved, adjust paths as needed:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="go">sed -i -e &#39;s,/old/scanroot/,/path/to/new/scanroot/,g&#39; /tmp/dump.json</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">Restore database in new marv:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="go">marv restore /tmp/dump.json</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">Set password for each user:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="go">marv user pw &lt;username&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">Run nodes:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="go">marv query -0 --collection=bags |xargs -0 -L25 -P4 marv run --keep-going</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">Run again sequentially to see if there are nodes producing errors:</p>
+</li>
+</ol>
+<blockquote>
+<div><div class="highlight-console"><div class="highlight"><pre><span></span><span class="go">marv run --collection=bags</span>
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Migration</a><ul>
+<li><a class="reference internal" href="#id1">17.11 -&gt; 18.02</a></li>
+<li><a class="reference internal" href="#id2">16.10 -&gt; 17.11</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="../maintenance.html" title="previous chapter">Maintenance</a></li>
+      <li>Next: <a href="../api/marv.html" title="next chapter">marv</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/migrate/index.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016-2018, Ternaris.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="../_sources/migrate/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
