@@ -42,8 +42,9 @@ def create_app(site, config_obj=None, app_root=None, checkdb=False, **kw):
     try:
         fd = os.open(site.config.marv.sessionkey_file,
                      os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o666)
-    except OSError:
-        pass
+    except OSError as e:
+        if e.errno != 17:
+            raise
     else:
         with os.fdopen(fd, 'w') as f:
             f.write(str(uuid4()))

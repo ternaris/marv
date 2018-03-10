@@ -276,6 +276,8 @@ Marv ships with a set of formatters. See :ref:`widget_custom` on how to override
 
 ``float``
 '''''''''
+Renders float with two decimal places.
+
 | extract: float
 
 ``icon``
@@ -294,7 +296,7 @@ Render a `glyphicon <https://getbootstrap.com/docs/3.3/components/#glyphicons>`_
 
 ``pill``
 ''''''''
-| extract: unicode
+| extract: int, float, unicode
 
 ``route``
 '''''''''
@@ -302,7 +304,7 @@ Used only for the detail route so far in conjunction with :ref:`cfg_sexp_detail_
 
 ``string``
 ''''''''''
-| extract: unicode
+| extract: int, float, unicode
 
 ``timedelta``
 '''''''''''''
@@ -370,7 +372,7 @@ Example:
 .. code-block:: ini
 
    detail_sections =
-       topics_section
+       connections_section
        video_section
 
 You can write your own and use some of the already existing :ref:`section_nodes`.

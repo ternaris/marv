@@ -262,6 +262,7 @@
 </div>
 <div class="section" id="float">
 <h5><code class="docutils literal"><span class="pre">float</span></code><a class="headerlink" href="#float" title="Permalink to this headline">¶</a></h5>
+<p>Renders float with two decimal places.</p>
 <div class="line-block">
 <div class="line">extract: float</div>
 </div>
@@ -288,7 +289,7 @@
 <div class="section" id="pill">
 <h5><code class="docutils literal"><span class="pre">pill</span></code><a class="headerlink" href="#pill" title="Permalink to this headline">¶</a></h5>
 <div class="line-block">
-<div class="line">extract: unicode</div>
+<div class="line">extract: int, float, unicode</div>
 </div>
 </div>
 <div class="section" id="route">
@@ -298,7 +299,7 @@
 <div class="section" id="id3">
 <h5><code class="docutils literal"><span class="pre">string</span></code><a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h5>
 <div class="line-block">
-<div class="line">extract: unicode</div>
+<div class="line">extract: int, float, unicode</div>
 </div>
 </div>
 <div class="section" id="id4">
@@ -347,7 +348,7 @@
 <p>List of detail section to be rendered beyond the summary section. For any given dataset those sections will be rendered only if the dataset contains the necessary data. In absence of meaningful data, sections will be omitted from the web frontend detail view.</p>
 <p>Example:</p>
 <div class="highlight-ini"><div class="highlight"><pre><span></span><span class="na">detail_sections</span> <span class="o">=</span><span class="s"></span>
-<span class="s">    topics_section</span>
+<span class="s">    connections_section</span>
 <span class="s">    video_section</span>
 </pre></div>
 </div>

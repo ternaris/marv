@@ -100,21 +100,15 @@ struct GeoJson {
   }
 
   struct Properties {
-    linear @0 :Bool;
-    markersize @1 :Float32;
-    orientation @2 :List(Float64);
-    timecode @3 :List(UInt64);
-    # TODO is UInt8 correct for all?
-    # alternative is a
-    # color :group {
-    #   red @4 :UInt8;
-    #   green @5 :UInt8;
-    #   blue @6 :UInt8;
-    #   alpha @7 :Float32;
-    # }
-    color @4 :List(UInt8);  # rgba
-    fillcolor @5 :List(UInt8);  # rgba
-    weight @6 :Float32 = 1.0;
+    coordinatesystem @0 :Text = "WGS84";    # `WGS84` or `cartesian
+    color @1 :List(Float32);                # global color [rgba]
+    colors @2 :List(List(Float32));         # per vertex color [[rgba]]
+    fillcolor @3 :List(Float32);            # global fill color [rgba]
+    fillcolors @4 :List(List(Float32));     # per vertex fill color [[rgba]]
+    width @5 :Float32;                      # linewidth / strokewith of filled geometry
+    timestamps @6 :List(UInt64);            # per vertex timestamp used for playback
+    rotations @7 :List(Float64);            # per vertex rotations if markers are used
+    markervertices @8 :List(Float64);       # rotation marker polygon (e.g. `[0, 0, -1, .3, -1, -.3]`)
   }
 }
 

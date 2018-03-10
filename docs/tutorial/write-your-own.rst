@@ -283,13 +283,13 @@ For nodes to be able to make files, they need to be persistent. We forgot to add
   INFO marv.run vmgpndaq6f.combined_section.ft6zlxpbvn.default (combined_section) started
   INFO marv.run vmgpndaq6f.gallery_section.oamfub7jpa.default (gallery_section) started
   INFO marv.run vmgpndaq6f.image_section.io4thnkdxx.default (image_section) started
-  INFO marv.run vmgpndaq6f.topics_section.yjrewalqzc.default (topics_section) started
+  INFO marv.run vmgpndaq6f.connections_section.yjrewalqzc.default (connections_section) started
   INFO marv.run vmgpndaq6f.bagmeta.dwz4xbykdt.default (bagmeta) started
   INFO marv.run vmgpndaq6f.filesize_plot.cpenbxihfq.default (filesize_plot) started
   INFO marv.run vmgpndaq6f.images.og54how3rb.default (images) started
   INFO marv.run vmgpndaq6f.image.og54how3rb.default (image) started
   INFO marv.run vmgpndaq6f.bagmeta.dwz4xbykdt.default finished
-  INFO marv.run vmgpndaq6f.topics_section.yjrewalqzc.default finished
+  INFO marv.run vmgpndaq6f.connections_section.yjrewalqzc.default finished
   INFO marv.run vmgpndaq6f.bagmeta_table.gahvdc4vpg.default finished
   INFO marv.run vmgpndaq6f.image.og54how3rb.default finished
   INFO marv.run vmgpndaq6f.image_section.io4thnkdxx.default finished
@@ -297,6 +297,15 @@ For nodes to be able to make files, they need to be persistent. We forgot to add
   INFO marv.run vmgpndaq6f.gallery_section.oamfub7jpa.default finished
   INFO marv.run vmgpndaq6f.filesize_plot.cpenbxihfq.default finished
   INFO marv.run vmgpndaq6f.combined_section.ft6zlxpbvn.default finished
+
+
+Persistent nodes and custom output types
+----------------------------------------
+
+If nodes do not declare an output message type ``@marv.node()`` they are volatile, will run each time somebody needs them, and they can output arbitrary python objects. In order to use node output in :ref:`cfg_c_listing_columns` or :ref:`cfg_c_filters`, the node needs to be persistent. In order to persist a node in the store it needs to declare an output type ``@marv.node(TYPE)`` and be listed in :ref:`cfg_c_nodes`. MARV uses `capnp <https://capnproto.org/>`_ to serialize and persist messages and ships with a couple of pre-defined types, which are available via ``marv.types``. Please take a look at that module and the capnp files it is importing from.
+
+In order to create your own capnp message types, place a ``module.capnp`` next to your ``module.py`` and take a look at the capnp files shipping with marv as well as the capnp `schema language <https://capnproto.org/language.html>`_.
+
 
 Summary
 -------

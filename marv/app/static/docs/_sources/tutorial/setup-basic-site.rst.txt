@@ -155,16 +155,16 @@ Given that we are dealing with bag files, it makes sense to add nodes that extra
 
   (venv:~/site) $ marv run --collection=bags
   INFO marv.run qmflhjcp6j.bagmeta_table.gahvdc4vpg.default (bagmeta_table) started
-  INFO marv.run qmflhjcp6j.topics_section.yjrewalqzc.default (topics_section) started
+  INFO marv.run qmflhjcp6j.connections_section.yjrewalqzc.default (connections_section) started
   INFO marv.run qmflhjcp6j.bagmeta.dwz4xbykdt.default (bagmeta) started
   INFO marv.run qmflhjcp6j.bagmeta.dwz4xbykdt.default finished
-  INFO marv.run qmflhjcp6j.topics_section.yjrewalqzc.default finished
+  INFO marv.run qmflhjcp6j.connections_section.yjrewalqzc.default finished
   INFO marv.run qmflhjcp6j.bagmeta_table.gahvdc4vpg.default finished
   INFO marv.run vmgpndaq6f.bagmeta_table.gahvdc4vpg.default (bagmeta_table) started
-  INFO marv.run vmgpndaq6f.topics_section.yjrewalqzc.default (topics_section) started
+  INFO marv.run vmgpndaq6f.connections_section.yjrewalqzc.default (connections_section) started
   INFO marv.run vmgpndaq6f.bagmeta.dwz4xbykdt.default (bagmeta) started
   INFO marv.run vmgpndaq6f.bagmeta.dwz4xbykdt.default finished
-  INFO marv.run vmgpndaq6f.topics_section.yjrewalqzc.default finished
+  INFO marv.run vmgpndaq6f.connections_section.yjrewalqzc.default finished
   INFO marv.run vmgpndaq6f.bagmeta_table.gahvdc4vpg.default finished
 
 Reload your browser and check the result.

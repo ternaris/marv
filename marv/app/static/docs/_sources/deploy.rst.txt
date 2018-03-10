@@ -58,6 +58,8 @@ uwsgi config
 nginx config
 ^^^^^^^^^^^^
 
+**Make sure to disable uwsgi buffering.** Otherwise the files will be buffered to hard disk by nginx instead of being served directly from marv to the client. A failure to disable buffering will result in failed download for files `bigger than 1GB <https://github.com/ternaris/marv-robotics/issues/24>`_.
+
 .. code-block:: nginx
 
    server {
@@ -82,6 +84,7 @@ nginx config
        client_max_body_size 10m;
        client_body_buffer_size 128k;
        uwsgi_pass 127.0.0.1:8000;
+       uwsgi_buffering off;
        include uwsgi_params;
      }
    }

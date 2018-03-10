@@ -86,6 +86,7 @@
 </div>
 <div class="section" id="nginx-config">
 <h3>nginx config<a class="headerlink" href="#nginx-config" title="Permalink to this headline">¶</a></h3>
+<p><strong>Make sure to disable uwsgi buffering.</strong> Otherwise the files will be buffered to hard disk by nginx instead of being served directly from marv to the client. A failure to disable buffering will result in failed download for files <a class="reference external" href="https://github.com/ternaris/marv-robotics/issues/24">bigger than 1GB</a>.</p>
 <div class="highlight-nginx"><div class="highlight"><pre><span></span><span class="k">server</span> <span class="p">{</span>
   <span class="kn">server_name</span> <span class="s">example.com</span><span class="p">;</span>
   <span class="kn">listen</span> <span class="mi">80</span><span class="p">;</span>
@@ -108,6 +109,7 @@
     <span class="kn">client_max_body_size</span> <span class="mi">10m</span><span class="p">;</span>
     <span class="kn">client_body_buffer_size</span> <span class="mi">128k</span><span class="p">;</span>
     <span class="kn">uwsgi_pass</span> <span class="n">127.0.0.1</span><span class="p">:</span><span class="mi">8000</span><span class="p">;</span>
+    <span class="kn">uwsgi_buffering</span> <span class="no">off</span><span class="p">;</span>
     <span class="kn">include</span> <span class="s">uwsgi_params</span><span class="p">;</span>
   <span class="p">}</span>
 <span class="p">}</span>

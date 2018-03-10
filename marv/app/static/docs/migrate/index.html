@@ -45,7 +45,18 @@
 <span id="migrate"></span><h1>Migration<a class="headerlink" href="#migration" title="Permalink to this headline">¶</a></h1>
 <p>Before doing any migration you might want to check the <a class="reference internal" href="../config.html#config"><span class="std std-ref">Configuration</span></a> and <a class="reference internal" href="../deploy.html#deploy"><span class="std std-ref">Deployment</span></a> sections.</p>
 <div class="section" id="id1">
-<h2>17.11 -&gt; 18.02<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<h2>18.02 -&gt; 18.03<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>With this release:</p>
+<ul class="simple">
+<li>geojson property object has changed.</li>
+</ul>
+<p>To update the store to the new format rerun the trajectory nodes using:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="go">marv run --node trajectory --force --force-dependent --collection=*</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id2">
+<h2>17.11 -&gt; 18.02<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
 <p>With this release:</p>
 <ul class="simple">
 <li>message definitions are read from bag files instead of being expected on the system</li>
@@ -92,12 +103,12 @@
 </pre></div>
 </div>
 <p>Now, nodes can be run, that were previously missing message type definitions. <code class="docutils literal"><span class="pre">gnss_plots</span></code> for example works differently, if it cannot find navsat orientations. To rerun it and all nodes depending on it:</p>
-<div class="highlight-console"><div class="highlight"><pre><span></span><span class="go">marv run --node gnss_plots --force --force-dependant --collection=*</span>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="go">marv run --node gnss_plots --force --force-dependent --collection=*</span>
 </pre></div>
 </div>
 </div>
-<div class="section" id="id2">
-<h2>16.10 -&gt; 17.11<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id3">
+<h2>16.10 -&gt; 17.11<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
 <p>In the old site:</p>
 <ol class="arabic">
 <li><p class="first"><strong>Make sure you have a backup of your old site!</strong></p>
@@ -160,8 +171,9 @@
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Migration</a><ul>
-<li><a class="reference internal" href="#id1">17.11 -&gt; 18.02</a></li>
-<li><a class="reference internal" href="#id2">16.10 -&gt; 17.11</a></li>
+<li><a class="reference internal" href="#id1">18.02 -&gt; 18.03</a></li>
+<li><a class="reference internal" href="#id2">17.11 -&gt; 18.02</a></li>
+<li><a class="reference internal" href="#id3">16.10 -&gt; 17.11</a></li>
 </ul>
 </li>
 </ul>

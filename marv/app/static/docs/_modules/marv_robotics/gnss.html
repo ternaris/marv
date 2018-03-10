@@ -72,7 +72,7 @@
 <span class="kn">import</span> <span class="nn">mpld3</span>
 
 <span class="kn">import</span> <span class="nn">marv</span>
-<span class="kn">from</span> <span class="nn">marv_nodes.types_capnp</span> <span class="k">import</span> <span class="n">File</span>
+<span class="kn">from</span> <span class="nn">marv.types</span> <span class="k">import</span> <span class="n">File</span>
 <span class="kn">from</span> <span class="nn">.bag</span> <span class="k">import</span> <span class="n">get_message_type</span><span class="p">,</span> <span class="n">messages</span>
 
 
@@ -118,7 +118,8 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">rosmsg</span><span class="p">,</span> <span class="s1">&#39;status&#39;</span><span class="p">)</span> <span class="ow">or</span> \
            <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">rosmsg</span><span class="o">.</span><span class="n">longitude</span><span class="p">)</span> <span class="ow">or</span> \
            <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">rosmsg</span><span class="o">.</span><span class="n">latitude</span><span class="p">)</span> <span class="ow">or</span> \
-           <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">rosmsg</span><span class="o">.</span><span class="n">altitude</span><span class="p">):</span>
+           <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">rosmsg</span><span class="o">.</span><span class="n">altitude</span><span class="p">)</span> <span class="ow">or</span> \
+           <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">rosmsg</span><span class="o">.</span><span class="n">position_covariance</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
             <span class="n">erroneous</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="k">continue</span>
 
@@ -142,7 +143,8 @@
     <span class="k">if</span> <span class="n">erroneous</span><span class="p">:</span>
         <span class="n">log</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">get_logger</span><span class="p">()</span>
         <span class="n">log</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;skipped </span><span class="si">%d</span><span class="s1"> erroneous messages&#39;</span><span class="p">,</span> <span class="n">erroneous</span><span class="p">)</span>
-    <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">push</span><span class="p">({</span><span class="s1">&#39;values&#39;</span><span class="p">:</span> <span class="n">positions</span><span class="p">})</span></div>
+    <span class="k">if</span> <span class="n">positions</span><span class="p">:</span>
+        <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">push</span><span class="p">({</span><span class="s1">&#39;values&#39;</span><span class="p">:</span> <span class="n">positions</span><span class="p">})</span></div>
 
 
 <div class="viewcode-block" id="imus"><a class="viewcode-back" href="../../nodes.html#marv_robotics.gnss.imus">[docs]</a><span class="nd">@marv</span><span class="o">.</span><span class="n">node</span><span class="p">()</span>

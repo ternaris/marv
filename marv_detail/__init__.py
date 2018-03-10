@@ -20,8 +20,11 @@
 
 from __future__ import absolute_import, division, print_function
 
-import capnp
 import json
+import sys
+
+import capnp
+
 from marv_pycapnp import Wrapper
 from .types_capnp import Detail, Widget
 
@@ -30,7 +33,9 @@ FORMATTER_MAP = {
     'date': lambda ns: None if ns is None else int(ns / 10**6),
     'datetime': lambda ns: None if ns is None else int(ns / 10**6),
     'filesize': lambda x: None if x is None else int(x),
+    'float': float,
     'icon[]': lambda x: x,
+    'int': int,
     'link': lambda x: x,
     'pill[]': lambda x: x,
     'rellink': lambda x: x,
@@ -45,7 +50,12 @@ def detail_to_dict(obj):
     widgets = dct.get('summary', {'widgets': []})['widgets'][:]
     widgets.extend(widget for sec in dct['sections'] for widget in sec['widgets'])
     for widget in widgets:
-        fixup_widget(widget)
+        try:
+            fixup_widget(widget)
+        except:
+            from pprint import pformat
+            print(pformat(widget), file=sys.stderr)
+            raise
     return dct
 
 
@@ -80,8 +90,10 @@ def fixup_widget(dct):
         formatter = [FORMATTER_MAP[col['formatter'] + ('[]' if col['list'] else '')]
                      for col in data['columns']]
         for row in data['rows']:
-            row['values'] = [formatter[i](cell[cell['_which']])
-                             for i, cell in enumerate(row.pop('cells'))]
+            row['values'] = values = []
+            for idx, cell in enumerate(row['cells']):
+                values.append(formatter[idx](cell[cell['_which']]))
+            del row['cells']
         for action in data['actions']:
             action['data'] = json.loads(action['data'])
 
@@ -114,13 +126,13 @@ def fixup_geojson(geojson):
             feature['type'] = 'Feature'
             fixup_geometry(feature['geometry'])
             properties = feature['properties']
-            timecode = properties['timecode']
-            if timecode:
-                properties['timecode'] = [int(x / 1e6) for x in timecode]
+            timestamps = properties['timestamps']
+            if timestamps:
+                properties['timestamps'] = [int(x / 1e6) for x in timestamps]
             else:
                 del properties['timecode']
-            if not properties['orientation']:
-                del properties['orientation']
+            if not properties['rotations']:
+                del properties['rotations']
     elif geotype == 'geometryCollection':
         for geo in geojson['geometries']:
             fixup_geometry(geo)

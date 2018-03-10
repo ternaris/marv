@@ -20,8 +20,11 @@
 
 from __future__ import absolute_import, division, print_function
 
+import datetime
 import json
 import os
+import re
+import sys
 import warnings
 from logging import getLogger
 
@@ -75,13 +78,13 @@ def create_app(push=True, init=False):
     return app
 
 
-def parse_setids(datasets, discarded=False):
+def parse_setids(datasets, discarded=False, dbids=False):
     fail = click.get_current_context().fail
     setids = set()
     for prefix in datasets:
         many = prefix.endswith('*')
         prefix = prefix[:-1] if many else prefix
-        setid = db.session.query(Dataset.setid)\
+        setid = db.session.query(Dataset.id if dbids else Dataset.setid)\
                           .filter(Dataset.setid.like('{}%'.format(prefix)))\
                           .filter(Dataset.discarded.is_(discarded))\
                           .all()
@@ -258,7 +261,7 @@ def marvcli_init():
 
 @marvcli.command('query')
 @click.option('--list-tags', is_flag=True, help='List all tags')
-@click.option('--collection', 'collections', multiple=True,
+@click.option('--col', '--collection', 'collections', multiple=True,
               help='Limit to one or more collections or force listing of all with --collection=*')
 @click.option('--discarded/--no-discarded', help='Dataset is discarded')
 @click.option('--outdated', is_flag=True, help='Datasets with outdated node output')
@@ -330,7 +333,7 @@ def marvcli_query(ctx, list_tags, collections, discarded, outdated, path, tags, 
               help='Update listing view from stored node output')
 @click.option('--cachesize', default=50, show_default=True,
               help='Number of messages to keep in memory for each stream')
-@click.option('--collection', 'collections', multiple=True,
+@click.option('--col', '--collection', 'collections', multiple=True,
               help='Run nodes for all datasets of selected collections, use "*" for all')
 @click.argument('datasets', nargs=-1)
 @click.pass_context
@@ -463,8 +466,62 @@ def marvcli_tag(ctx, add, remove, datasets):
         click.echo(ctx.get_help())
         ctx.exit(1)
 
+    app = create_app()
     setids = parse_setids(datasets)
-    create_app().site.tag(setids, add, remove)
+    app.site.tag(setids, add, remove)
+
+
+@marvcli.group('comment')
+def marvcli_comment():
+    """Add or remove comments"""
+
+
+@marvcli_comment.command('add')
+@click.option('-u', '--user', prompt=True, help='Commenting user')
+@click.option('-m', '--message', required=True, help='Message for the comment')
+@click.argument('datasets', nargs=-1)
+def marvcli_comment_add(user, message, datasets):
+    """Add comment as user for one or more datasets"""
+    app = create_app()
+    try:
+        db.session.query(User).filter(User.name==user).one()
+    except NoResultFound:
+        click.echo("ERROR: No such user '{}'".format(user), err=True)
+        sys.exit(1)
+    ids = parse_setids(datasets, dbids=True)
+    app.site.comment(user, message, ids)
+
+
+@marvcli_comment.command('list')
+@click.argument('datasets', nargs=-1)
+def marvcli_comment_list(datasets):
+    """Lists comments for datasets.
+
+    Output: setid comment_id date time author message
+    """
+    app = create_app()
+    ids = parse_setids(datasets, dbids=True)
+    comments = db.session.query(Comment)\
+                         .options(db.joinedload(Comment.dataset))\
+                         .filter(Comment.dataset_id.in_(ids))
+    for comment in sorted(comments, key=lambda x: (x.dataset._setid, x.id)):
+        print(comment.dataset.setid, comment.id,
+              datetime.datetime.fromtimestamp(int(comment.time_added / 1000)),
+              comment.author, repr(comment.text))
+
+
+@marvcli_comment.command('rm')
+@click.argument('ids', nargs=-1)
+def marvcli_comment_rm(ids):
+    """Remove comments.
+
+    Remove comments by id as given in second column of: marv comment list
+    """
+    app = create_app()
+    db.session.query(Comment)\
+              .filter(Comment.id.in_(ids))\
+              .delete(synchronize_session=False)
+    db.session.commit()
 
 
 @marvcli.group('user')
@@ -473,17 +530,24 @@ def marvcli_user():
 
 
 @marvcli_user.command('add')
-@click.option('--password', prompt=True, hide_input=True, confirmation_prompt=True,
-              help='Password will be prompted')
+@click.option('--password', help='Password will be prompted')
 @click.argument('username')
 @click.pass_context
 def marvcli_user_add(ctx, username, password):
     """Add a user"""
+    if not re.match(r'[0-9a-zA-Z\-_\.@+]+$', username):
+        click.echo('Invalid username: {}'.format(username), err=True)
+        click.echo('Must only contain ASCII letters, numbers, dash, underscore and dot',
+                   err=True)
+        sys.exit(1)
+    if password is None:
+        password = click.prompt('Password', hide_input=True, confirmation_prompt=True)
     app = create_app()
     try:
         app.um.user_add(username, password, 'marv', '')
     except ValueError as e:
-        ctx.fail(e.args[0])
+        click.echo('Error: {}'.format(e.args[0], err=True))
+        sys.exit(1)
 
 
 @marvcli_user.command('list')

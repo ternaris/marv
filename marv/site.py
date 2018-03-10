@@ -23,6 +23,7 @@ from __future__ import absolute_import, division, print_function
 import json
 import os
 import shutil
+import time
 from itertools import count, groupby, product
 from logging import getLogger
 
@@ -379,6 +380,14 @@ class Site(object):
         for collection in self.collections.values():
             for scanroot in collection.scanroots:
                 collection.scan(scanroot, dry_run)
+
+    def comment(self, username, message, ids):
+        now = int(time.time() * 1000)
+        comments = [Comment(dataset_id=id, author=username, time_added=now,
+                            text=message)
+                    for id in ids]
+        db.session.add_all(comments)
+        db.session.commit()
 
     def tag(self, setids, add=None, remove=None):
         assert setids

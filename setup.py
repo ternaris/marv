@@ -28,7 +28,7 @@ with open(os.path.join(HERE, 'README.rst')) as f:
     README = f.read()
 
 setup(name='marv',
-      version='3.1.0',
+      version='3.2.0',
       description='MARV framework',
       long_description=README,
       classifiers=[
@@ -70,6 +70,9 @@ setup(name='marv',
                         'PyJWT',
                         'bcrypt',
                         'configparser',
+                        'cython',
+                        'Jinja2>=2.7.3',
+                        'requests-oauthlib',
                         'pycapnp-for-marv',
                         'marv-cli'],
       extras_require={

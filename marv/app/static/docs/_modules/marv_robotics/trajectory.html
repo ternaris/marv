@@ -63,7 +63,7 @@
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
 <span class="kn">import</span> <span class="nn">marv</span>
-<span class="kn">from</span> <span class="nn">marv_nodes.types_capnp</span> <span class="k">import</span> <span class="n">File</span><span class="p">,</span> <span class="n">GeoJson</span>
+<span class="kn">from</span> <span class="nn">marv.types</span> <span class="k">import</span> <span class="n">File</span><span class="p">,</span> <span class="n">GeoJson</span>
 <span class="kn">from</span> <span class="nn">.bag</span> <span class="k">import</span> <span class="n">get_message_type</span><span class="p">,</span> <span class="n">messages</span>
 
 
@@ -87,7 +87,9 @@
             <span class="k">continue</span>
         <span class="c1"># TODO: namedtuple?</span>
         <span class="n">out</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="n">rosmsg</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">status</span><span class="p">,</span>
-               <span class="s1">&#39;lon&#39;</span><span class="p">:</span> <span class="n">rosmsg</span><span class="o">.</span><span class="n">longitude</span><span class="p">,</span> <span class="s1">&#39;lat&#39;</span><span class="p">:</span> <span class="n">rosmsg</span><span class="o">.</span><span class="n">latitude</span><span class="p">}</span>
+               <span class="s1">&#39;lon&#39;</span><span class="p">:</span> <span class="n">rosmsg</span><span class="o">.</span><span class="n">longitude</span><span class="p">,</span>
+               <span class="s1">&#39;lat&#39;</span><span class="p">:</span> <span class="n">rosmsg</span><span class="o">.</span><span class="n">latitude</span><span class="p">,</span>
+               <span class="s1">&#39;timestamp&#39;</span><span class="p">:</span> <span class="n">rosmsg</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">stamp</span><span class="o">.</span><span class="n">to_time</span><span class="p">()}</span>
         <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">erroneous</span><span class="p">:</span>
         <span class="n">log</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">get_logger</span><span class="p">()</span>
@@ -103,10 +105,15 @@
     <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">set_header</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="n">navsatfix</span><span class="o">.</span><span class="n">title</span><span class="p">)</span>
     <span class="n">features</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">prev_quality</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">timestamps</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">marv</span><span class="o">.</span><span class="n">pull</span><span class="p">(</span><span class="n">navsatfix</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">msg</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">break</span>
+
+        <span class="n">dt</span> <span class="o">=</span> <span class="n">msg</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span>
+        <span class="n">timestamps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">dt</span> <span class="o">*</span> <span class="mf">1e9</span><span class="p">))</span>
+
         <span class="c1"># Whether to output an augmented fix is determined by both the fix</span>
         <span class="c1"># type and the last time differential corrections were received.  A</span>
         <span class="c1"># fix is valid when status &gt;= STATUS_FIX.</span>
@@ -120,12 +127,15 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">quality</span> <span class="o">=</span> <span class="mi">4</span>
         <span class="k">if</span> <span class="n">quality</span> <span class="o">!=</span> <span class="n">prev_quality</span><span class="p">:</span>
-            <span class="n">color</span> <span class="o">=</span> <span class="p">((</span><span class="mi">255</span><span class="p">,</span>   <span class="mi">0</span><span class="p">,</span>   <span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span>  <span class="c1"># rgba</span>
-                     <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">165</span><span class="p">,</span>   <span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span>
-                     <span class="p">(</span>  <span class="mi">0</span><span class="p">,</span>   <span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span>
-                     <span class="p">(</span>  <span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span>   <span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">))[</span><span class="n">quality</span><span class="p">]</span>
+            <span class="n">color</span> <span class="o">=</span> <span class="p">((</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span>   <span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">),</span>  <span class="c1"># rgba</span>
+                     <span class="p">(</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">0.65</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">),</span>
+                     <span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span>   <span class="mf">1.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">),</span>
+                     <span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">,</span>   <span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">))[</span><span class="n">quality</span><span class="p">]</span>
             <span class="n">coords</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="n">feat</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;properties&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="n">color</span><span class="p">},</span>
+            <span class="n">feat</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;properties&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="n">color</span><span class="p">,</span>
+                                   <span class="s1">&#39;width&#39;</span><span class="p">:</span> <span class="mf">4.</span><span class="p">,</span>
+                                   <span class="s1">&#39;timestamps&#39;</span><span class="p">:</span> <span class="n">timestamps</span><span class="p">,</span>
+                                   <span class="s1">&#39;markervertices&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">c</span> <span class="o">*</span> <span class="mi">30</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.</span><span class="p">,</span> <span class="o">.</span><span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.</span><span class="p">,</span> <span class="o">-.</span><span class="mi">3</span><span class="p">)]},</span>
                     <span class="s1">&#39;geometry&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;line_string&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;coordinates&#39;</span><span class="p">:</span> <span class="n">coords</span><span class="p">}}}</span>
             <span class="n">features</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">feat</span><span class="p">)</span>
             <span class="n">prev_quality</span> <span class="o">=</span> <span class="n">quality</span>

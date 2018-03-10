@@ -6,6 +6,20 @@ Migration
 Before doing any migration you might want to check the :ref:`config` and :ref:`deploy` sections.
 
 
+18.02 -> 18.03
+--------------
+
+With this release:
+
+- geojson property object has changed.
+
+To update the store to the new format rerun the trajectory nodes using:
+
+.. code-block:: console
+
+   marv run --node trajectory --force --force-dependent --collection=*
+
+
 17.11 -> 18.02
 --------------
 
@@ -29,7 +43,7 @@ Now, nodes can be run, that were previously missing message type definitions. ``
 
 .. code-block:: console
 
-   marv run --node gnss_plots --force --force-dependant --collection=*
+   marv run --node gnss_plots --force --force-dependent --collection=*
 
 
 16.10 -> 17.11

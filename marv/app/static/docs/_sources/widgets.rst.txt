@@ -59,6 +59,52 @@ Example: :func:`marv_robotics.detail.video_section`
 
 Trajectory
 ^^^^^^^^^^
+The trajectory widget renders a list of layers on top of each other.
+
+.. code-block:: python
+
+   {'zoom': {'min': -10, 'max': 30},
+    'layers': [
+        {'title': 'Vector floor map',
+         'geojson': geojson_object1},
+        {'title': 'Trajectory',
+         'color': (0., 1., 0., 1.),
+         'geojson': geojson_object2},
+    ]
+   }
+
+The zoom value defines the valid zoom range that will be enforced in the frontend. Each layer in the list is defined by its name that is displayed in the legend, an optional legend color, and its GeoJSON definition.
+
+The geojson value conforms the official `GeoJSON format specification <https://tools.ietf.org/html/rfc7946>`_, and adds a few styling extensions. For now the widget supports a subset of the GeoJSON standard. The widget expects a feature collection as the toplevel GeoJSON object and the supported geometries are `LineString` and `Polygon`.
+
+.. code-block:: python
+
+   {'feature_collection': {'features': [
+    {'geometry': {'line_string': {'coordinates': coord_list}},
+     'properties': {'coordinatesystem': 'WGS84',      # or `cartesian`
+                    'color': (0., 1., 0., 1.),        # per geometry color
+                    'colors': color_list,             # or per vertex color list
+                    'fillcolor': (0., 1., 0., 1.),    # per geometry fillcolor
+                    'fillcolors': fillcolor_list,     # or per vertex fillcolor list
+                    'width': 4.,                      # line or polygon stroke width
+                    'timestamps': timestamp_list,     # per vertex timestamp used for playback
+                    'rotations': rotations_list,      # per vertex rotations if markers are used
+                    'markervertices' marker_geometry, # rotation marker polygon (e.g. `[0, 0, -1, .3, -1, -.3]`)
+                    }},
+   ]}}
+
+The properties object holds styling and animation information for the trajectory player widget. Properties should at least define one of the color values, apart from that all entries are optional. The default coordinatesystem is `WGS84` which is used per default in the GeoJSON standard and in `sensor_msgs/NavSatFix Message`. The value `cartesian` allows the use of any Cartesian coordinate system.
+
+`Colors` can be given either as a per geometry value or as a list of values for each vertex in the geometry.
+
+The `width` value corresponds to the rendered line width in pixels. When the geometry is of type `polygon` and either of `color` or `colors` is set, then a stroke of width pixels is rendered.
+
+*EE only:* The presence of a `timestamps` list enables the player functionality. This option works only with geometries of type `LineString` and should hold one value per geometry vertex. The widget assumes that the timestamps are in ascending order, as usually delivered by a GPS sensor.
+
+*EE only:* The presence of a `markervertices` enables rendering of a marker at the current trajectory location during playback. The triangle size is not affected by zoom. If not set explicitly its rotation is calculated by the last significant heading from the coordinates.
+
+*EE only:* The `rotations` list can be used to set the rotation of the marker at each coordinate. Each value is a scalar indicating the rotation around the z axis, e.g. obtained from an IMU. The rotation angles have to be given counter clock wise in radians, with zero pointing in the direction of the x axis.
+
 Example: :func:`marv_robotics.detail.trajectory_section`
 
 

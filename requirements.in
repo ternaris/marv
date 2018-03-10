@@ -1,9 +1,9 @@
 -r ../cli/requirements.txt
 Flask-Cors
 Flask-SQLAlchemy
+PyJWT
 bcrypt
 configparser
-PyJWT
 requests-oauthlib
 
 # for pycapnp
